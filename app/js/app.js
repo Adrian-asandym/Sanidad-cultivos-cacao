@@ -8,6 +8,13 @@ import { icon } from './icons.js';
 const LOW_CONFIDENCE = 0.6;
 
 const $ = (sel, root = document) => root.querySelector(sel);
+const photoDialog = document.querySelector('#photo-dialog');
+const enlargedPhoto = photoDialog.querySelector('img');
+photoDialog.addEventListener('click', (event) => {
+  if (event.target === photoDialog) photoDialog.close();
+});
+photoDialog.addEventListener('close', () => enlargedPhoto.removeAttribute('src'));
+
 const screenEl = $('#screen');
 const fileCamera = $('#file-camera');
 const fileGallery = $('#file-gallery');
@@ -18,8 +25,8 @@ const state = {
   photoUrl: null,
   vfMode: 'idle', // idle | live | photo | error
   vfError: '',
-  current: null, // resultado sin guardar
-  savedId: null,
+  current: null,
+  analyzing: false,
   model: { status: 'loading', backend: '' },
 };
 
@@ -44,10 +51,7 @@ function ring(p, size, stroke) {
   </svg>`;
 }
 
-// `layout` elige la disposición responsiva de la pantalla (ver .layout-* en styles.css).
-// El orden del HTML es siempre el del móvil; en pantallas anchas CSS Grid lo reubica.
-function render(html, { focus = true, layout = 'narrow' } = {}) {
-  html = `<div class="layout layout-${layout}">${html}</div>`;
+function render(html, { focus = true } = {}) {
   screenEl.innerHTML = html;
   // Libera las imágenes que ya no aparecen en pantalla (la foto actual se gestiona aparte).
   const keep = pageUrls.filter((u) => html.includes(u));
@@ -74,7 +78,6 @@ function setPhoto(blob) {
   state.photoUrl = blob ? URL.createObjectURL(blob) : null;
   state.vfMode = blob ? 'photo' : 'idle';
   state.current = null;
-  state.savedId = null;
 }
 
 // ------------------------------------------------------------------ estado de los modelos
@@ -146,43 +149,28 @@ function renderCapture({ focus = true } = {}) {
   }
 
   render(`
-    <div class="area-title">
+    <div>
       <h1 class="screen-title" tabindex="-1" data-focus>Nuevo diagnóstico</h1>
       <p class="screen-lead">Identifica Moniliasis, Fitoftora o Escoba de bruja.</p>
     </div>
-    <section class="card area-media" aria-label="Foto de la mazorca">
-      <div class="viewfinder" data-mode="${m}">
-        ${inner}
-        <div class="frame-guide" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div class="capture-layout">
+      <section class="card" aria-label="Foto de la mazorca">
+        <div class="viewfinder" data-mode="${m}">
+          ${inner}
+          <div class="frame-guide" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        </div>
+        <p class="guide">${icon('pod')} Centra la mazorca y evita sombras fuertes</p>
+      </section>
+      <div class="capture-tools stack">
+        ${actions}
+        ${modelStatusHtml()}
       </div>
-      <p class="guide">${icon('pod')} Centra la mazorca y evita sombras fuertes</p>
-    </section>
-    <div class="stack area-actions">${actions}</div>
-    <div class="area-status">${modelStatusHtml()}</div>
-    <aside class="card tips-card area-tips only-wide" aria-labelledby="tips-title">
-      <h2 id="tips-title">Para una buena foto</h2>
-      <ul class="tips">
-        <li>Fotografía <strong>una sola mazorca</strong>, de cerca, ocupando casi todo el recuadro.</li>
-        <li>Busca luz pareja: evita sombras fuertes y el sol directo detrás del fruto.</li>
-        <li>Si el resultado sale poco confiable, repite la foto desde otro ángulo.</li>
-      </ul>
-      <h2>Cómo funciona</h2>
-      <ol class="how">
-        <li><strong>Filtro:</strong> comprueba que la foto sea de una mazorca de cacao.</li>
-        <li><strong>Diagnóstico:</strong> identifica si está sana o tiene Moniliasis, Fitoftora o Escoba de bruja.</li>
-      </ol>
-    </aside>
-  `, { focus, layout: 'capture' });
+    </div>
+  `, { focus });
 
   if (m === 'live') {
-    const video = $('#video');
-    startCamera(video).then(() => {
-      if (state.vfMode !== 'live' || !video.isConnected) stopCamera();
-    }).catch((err) => {
+    startCamera($('#video')).catch((err) => {
       console.warn(err);
-      // La cámara responde de forma asíncrona: si mientras tanto se cambió de
-      // pantalla, no se redibuja la captura encima de la pantalla actual.
-      if (state.vfMode !== 'live' || !video.isConnected) { stopCamera(); return; }
       state.vfMode = 'error';
       state.vfError = cameraErrorMessage(err);
       renderCapture();
@@ -218,32 +206,51 @@ function markStep(n, s) {
 const nextFrame = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
 
 async function analyze() {
-  if (!state.photo) return;
+  const photo = state.photo;
+  if (!photo || state.analyzing) return;
+  state.analyzing = true;
   stopCamera();
   renderAnalyzing();
-  await nextFrame();
+  const isCurrentPhoto = () => state.photo === photo && state.tab === 'diagnostico';
   try {
-    // Paso 1: si no es cacao, la imagen no se analiza.
-    const gate = await isCacao(state.photo);
-    if (!gate.isCacao) { renderNotCacao(gate); return; }
-    markStep(1, 'done');
-    markStep(2, 'active');
     await nextFrame();
-    // Paso 2: estado de la mazorca.
-    const res = await predict(state.photo);
-    markStep(2, 'done');
-    state.current = {
-      label: res.label,
-      confidence: res.confidence,
-      inferenceMs: res.inferenceMs,
+    const gate = await isCacao(photo);
+    let record = {
+      label: 'no_cacao',
+      confidence: gate.confidence,
       gateConfidence: gate.confidence,
-      createdAt: Date.now(),
     };
-    state.savedId = null;
-    renderResult(state.current, { photoUrl: state.photoUrl });
+    if (gate.isCacao) {
+      markStep(1, 'done');
+      markStep(2, 'active');
+      await nextFrame();
+      const result = await predict(photo);
+      if (!diseases[result.label]) throw new Error('Diagnóstico desconocido');
+      record = { ...result, gateConfidence: gate.confidence };
+      markStep(2, 'done');
+    }
+    record.createdAt = Date.now();
+
+    try {
+      const thumb = await makeThumbnail(photo).catch((err) => {
+        console.error(err);
+        return null;
+      });
+      const preview = await makeThumbnail(photo, 1280, { crop: false }).catch(() => null);
+      record.id = await addDiagnosis({ ...record, thumb, preview });
+    } catch (err) {
+      console.error(err);
+      toast('No se pudo guardar la consulta en el historial de este dispositivo.');
+    }
+
+    if (state.photo === photo) state.current = record;
+    if (isCurrentPhoto()) renderResult(record, { photoUrl: state.photoUrl });
+    if (state.tab === 'historial') await renderHistory({ focus: false });
   } catch (err) {
     console.error(err);
-    renderAnalysisError();
+    if (isCurrentPhoto()) renderAnalysisError();
+  } finally {
+    state.analyzing = false;
   }
 }
 
@@ -266,32 +273,36 @@ function renderAnalysisError() {
 }
 
 // ------------------------------------------------------------------ pantalla: no es cacao
-function renderNotCacao(gate) {
+function renderNotCacao(rec, { photoUrl, fromHistory }) {
   render(`
+    ${fromHistory ? `<button class="back-link" type="button" data-action="back-history">${icon('back')} Historial</button>` : ''}
     <section class="card reject">
       <div class="reject-photo">
-        <img src="${state.photoUrl}" alt="Foto analizada">
+        ${photoUrl ? `<button class="photo-trigger" type="button" data-action="view-photo" aria-label="Ampliar foto analizada" aria-haspopup="dialog"><img src="${photoUrl}" alt="Foto analizada"></button>` : ''}
         <span class="badge">${icon('alert')}</span>
       </div>
       <p class="eyebrow">Imagen rechazada</p>
       <h2 tabindex="-1" data-focus>No se puede analizar esta imagen</h2>
       <p><strong>No es un cacao.</strong> BioPlant AI solo diagnostica mazorcas de cacao, así que esta foto no se analizó.</p>
-      <span class="chip chip-amber">${icon('pod')} Coincidencia con cacao: ${pct(gate.confidence)}</span>
+      <span class="chip chip-amber">${icon('pod')} Coincidencia con cacao: ${pct(rec.gateConfidence)}</span>
       <ul class="tips">
         <li>Fotografía <strong>una mazorca de cacao</strong>, de cerca y ocupando casi todo el recuadro.</li>
         <li>Usa luz pareja y evita sombras fuertes.</li>
         <li>Si sí es cacao, prueba desde otro ángulo.</li>
       </ul>
     </section>
+    ${rec.id && !fromHistory ? '<p class="model-status">Guardado en el historial</p>' : ''}
+    ${fromHistory ? `<button class="btn btn-secondary btn-danger" type="button" data-action="delete-current" data-id="${rec.id}">${icon('trash')} Eliminar del historial</button>` : `
     <div class="stack">
       <button class="btn btn-primary" type="button" data-action="retake">${icon('camera')} Tomar otra foto</button>
       <button class="btn btn-secondary" type="button" data-action="gallery">${icon('gallery')} Elegir de galería</button>
-    </div>
+    </div>`}
   `);
 }
 
 // ------------------------------------------------------------------ pantalla: resultado
 function renderResult(rec, { photoUrl, fromHistory = false } = {}) {
+  if (rec.label === 'no_cacao') { renderNotCacao(rec, { photoUrl, fromHistory }); return; }
   const d = diseases[rec.label];
   if (!d) { renderAnalysisError(); return; }
   const low = rec.confidence < LOW_CONFIDENCE;
@@ -321,18 +332,16 @@ function renderResult(rec, { photoUrl, fromHistory = false } = {}) {
   if (fromHistory) {
     actions = `<button class="btn btn-secondary btn-danger" type="button" data-action="delete-current" data-id="${rec.id}">${icon('trash')} Eliminar del historial</button>`;
   } else {
-    const saveBtn = state.savedId
-      ? `<button class="btn ${low ? 'btn-secondary' : 'btn-primary'}" type="button" disabled>${icon('check')} Guardado en el historial</button>`
-      : `<button class="btn ${low ? 'btn-secondary' : 'btn-primary'}" type="button" data-action="save">${icon('save')} Guardar en Historial</button>`;
     actions = low
-      ? `<button class="btn btn-primary" type="button" data-action="retake">${icon('camera')} Repetir foto</button>${saveBtn}`
-      : `${saveBtn}<button class="btn btn-secondary" type="button" data-action="new">${icon('camera')} Nuevo diagnóstico</button>`;
+      ? `<button class="btn btn-primary" type="button" data-action="retake">${icon('camera')} Repetir foto</button>`
+      : `<button class="btn btn-primary" type="button" data-action="new">${icon('camera')} Nuevo diagnóstico</button>`;
+    if (rec.id) actions += '<p class="model-status">Guardado en el historial</p>';
   }
 
   render(`
-    ${fromHistory ? `<button class="back-link area-back" type="button" data-action="back-history">${icon('back')} Historial</button>` : ''}
-    <article class="card diag-card area-diag" aria-labelledby="diag-name">
-      ${photoUrl ? `<div class="diag-photo"><img src="${photoUrl}" alt="Foto analizada de la mazorca"></div>` : ''}
+    ${fromHistory ? `<button class="back-link" type="button" data-action="back-history">${icon('back')} Historial</button>` : ''}
+    <article class="card diag-card" aria-labelledby="diag-name">
+      ${photoUrl ? `<button class="diag-photo photo-trigger" type="button" data-action="view-photo" aria-label="Ampliar foto analizada" aria-haspopup="dialog"><img src="${photoUrl}" alt="Foto analizada de la mazorca"></button>` : ''}
       <div class="diag-head">
         <div>
           <p class="eyebrow">${low ? 'Diagnóstico no concluyente' : 'Diagnóstico patológico'}</p>
@@ -356,7 +365,7 @@ function renderResult(rec, { photoUrl, fromHistory = false } = {}) {
       <p class="diag-desc">${esc(d.descripcion)}</p>
     </article>
 
-    <section class="treatment area-treat" aria-labelledby="treat-title">
+    <section class="treatment" aria-labelledby="treat-title">
       <div class="treatment-head">
         <span class="circle">${icon(healthy ? 'eye' : 'doc')}</span>
         <h3 id="treat-title">${esc(d.seccion)}</h3>
@@ -364,28 +373,17 @@ function renderResult(rec, { photoUrl, fromHistory = false } = {}) {
       <ol class="step-list">${steps}</ol>
     </section>
 
-    <p class="disclaimer area-disc">Resultado orientativo generado por IA. Confírmalo con un técnico agrónomo antes de tomar decisiones de manejo.</p>
-    <div class="stack area-actions">${actions}</div>
-  `, { layout: fromHistory ? 'result has-back' : 'result' });
-}
-
-async function saveCurrent() {
-  if (!state.current || state.savedId) return;
-  try {
-    const thumb = await makeThumbnail(state.photo);
-    state.savedId = await addDiagnosis({ ...state.current, thumb });
-    renderResult(state.current, { photoUrl: state.photoUrl });
-    toast('Guardado en el historial');
-  } catch (err) {
-    console.error(err);
-    toast('No se pudo guardar. Revisa el espacio disponible del teléfono.');
-  }
+    <p class="disclaimer">Resultado orientativo generado por IA. Confírmalo con un técnico agrónomo antes de tomar decisiones de manejo.</p>
+    <div class="stack">${actions}</div>
+  `);
 }
 
 // ------------------------------------------------------------------ pantalla: historial
 async function renderHistory({ focus = true } = {}) {
   let items = [];
   try { items = await listDiagnoses(); } catch (err) { console.error(err); }
+
+  if (state.tab !== 'historial') return;
 
   if (!items.length) {
     render(`
@@ -402,7 +400,7 @@ async function renderHistory({ focus = true } = {}) {
           <path d="M112 19v7l4.5 3" stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none"/>
         </svg>
         <h2>Aún no tienes diagnósticos guardados</h2>
-        <p>Cuando guardes un resultado aparecerá aquí, incluso sin conexión.</p>
+        <p>Cada consulta completada aparecerá aquí automáticamente, incluso sin conexión.</p>
         <button class="btn btn-primary" type="button" data-action="go-diagnose">${icon('camera')} Hacer un diagnóstico</button>
       </section>
     `, { focus });
@@ -410,8 +408,8 @@ async function renderHistory({ focus = true } = {}) {
   }
 
   const rows = items.map((r) => {
-    const d = diseases[r.label] || { nombre: r.label };
-    const low = r.confidence < LOW_CONFIDENCE;
+    const d = diseases[r.label] || { nombre: r.label === 'no_cacao' ? 'Imagen rechazada · No es cacao' : r.label };
+    const low = r.label === 'no_cacao' || r.confidence < LOW_CONFIDENCE;
     const thumb = r.thumb ? `<img class="hist-thumb" src="${pageUrl(r.thumb)}" alt="">` : '<span class="hist-thumb"></span>';
     return `<li class="hist-item">
       <button class="hist-open" type="button" data-action="open" data-id="${r.id}">
@@ -432,13 +430,14 @@ async function renderHistory({ focus = true } = {}) {
       <p class="screen-lead">${items.length} ${items.length === 1 ? 'diagnóstico guardado' : 'diagnósticos guardados'} en este dispositivo</p>
     </div>
     <ul class="hist-list">${rows}</ul>
-  `, { focus, layout: 'history' });
+  `, { focus });
 }
 
 async function openHistoryItem(id) {
   const rec = await getDiagnosis(id);
   if (!rec) { renderHistory(); return; }
-  renderResult(rec, { photoUrl: rec.thumb ? pageUrl(rec.thumb) : null, fromHistory: true });
+  const photo = rec.preview || rec.thumb;
+  renderResult(rec, { photoUrl: photo ? pageUrl(photo) : null, fromHistory: true });
 }
 
 async function removeItem(id, { thenHistory = true } = {}) {
@@ -503,10 +502,13 @@ screenEl.addEventListener('click', async (e) => {
       } catch (err) { toast(err.message); }
       break;
     }
+    case 'view-photo':
+      enlargedPhoto.src = btn.querySelector('img').src;
+      photoDialog.showModal();
+      break;
     case 'analyze': analyze(); break;
     case 'retake': setPhoto(null); takePhoto(); break;
     case 'new': resetToCapture(); break;
-    case 'save': saveCurrent(); break;
     case 'retry-models': bootModels(); break;
     case 'go-diagnose': resetToCapture(); break;
     case 'open': openHistoryItem(id); break;
