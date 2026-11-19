@@ -1,0 +1,41 @@
+{
+  "clases": [
+    "cacao_sano",
+    "escoba_de_bruja",
+    "fitoftora",
+    "monilia"
+  ],
+  "nombres": [
+    "Cacao sano",
+    "Escoba de bruja",
+    "Fitoftora",
+    "Monilia"
+  ],
+  "image_size": [
+    224,
+    224
+  ],
+  "entrada": "RGB float32, 0..255; normalización incluida en el modelo",
+  "resize": "PIL bilinear, con orientación EXIF y fondo blanco para transparencias",
+  "tensorflow_version": "2.21.0",
+  "entrada_tfjs": "RGB float32 0..255, 224x224 (la normalización va dentro del modelo)",
+  "origen": "modelo_cacao.keras",
+  "rescaling_agregado_en_conversion": false,
+  "verificacion": {
+    "imagenes": "tools/convert_keras_to_tfjs.py:test_images",
+    "salida_esperada": [
+      [
+        0.9147668480873108,
+        0.00383741850964725,
+        0.056959278881549835,
+        0.024436412379145622
+      ],
+      [
+        0.22203429043293,
+        0.011176680214703083,
+        0.022532761096954346,
+        0.7442562580108643
+      ]
+    ]
+  }
+}

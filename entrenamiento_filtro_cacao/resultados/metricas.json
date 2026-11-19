@@ -1,0 +1,83 @@
+{
+  "semilla": 42,
+  "minutos_entrenamiento": 10.3,
+  "epocas": {
+    "fase1": 15,
+    "fase2": 10
+  },
+  "division": {
+    "train": 836,
+    "val": 184,
+    "test": 180
+  },
+  "resultados": {
+    "train": {
+      "n": 836,
+      "accuracy": 0.9796650717703349,
+      "loss": 0.12674476206302643,
+      "matriz_confusion": [
+        [
+          413,
+          3
+        ],
+        [
+          14,
+          406
+        ]
+      ],
+      "precision_cacao": 0.9672131147540983,
+      "recall_cacao": 0.9927884615384616,
+      "precision_otros": 0.9926650366748166,
+      "recall_otros": 0.9666666666666667
+    },
+    "val": {
+      "n": 184,
+      "accuracy": 0.9891304347826086,
+      "loss": 0.13199198246002197,
+      "matriz_confusion": [
+        [
+          94,
+          0
+        ],
+        [
+          2,
+          88
+        ]
+      ],
+      "precision_cacao": 0.9791666666666666,
+      "recall_cacao": 1.0,
+      "precision_otros": 1.0,
+      "recall_otros": 0.9777777777777777
+    },
+    "test": {
+      "n": 180,
+      "accuracy": 0.9888888888888889,
+      "loss": 0.11854512989521027,
+      "matriz_confusion": [
+        [
+          90,
+          0
+        ],
+        [
+          2,
+          88
+        ]
+      ],
+      "precision_cacao": 0.9782608695652174,
+      "recall_cacao": 1.0,
+      "precision_otros": 1.0,
+      "recall_otros": 0.9777777777777777
+    },
+    "test_por_subcategoria": {
+      "cacao_escoba_de_bruja": "8/8",
+      "cacao_fitoftora": "6/6",
+      "enfermo_moniliasis_m1": "1/1",
+      "enfermo_moniliasis_m3": "11/11",
+      "otros_carro": "2/2",
+      "otros_fruta_planta": "71/73",
+      "otros_lentes": "2/2",
+      "otros_vegetacion": "13/13",
+      "sano": "64/64"
+    }
+  }
+}

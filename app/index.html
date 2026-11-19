@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>BioPlant AI · Diagnóstico de cacao</title>
+  <meta name="description" content="Identifica Moniliasis, Fitoftora y Escoba de bruja en mazorcas de cacao a partir de una foto. Funciona sin internet.">
+  <meta name="theme-color" content="#0B6B45">
+  <meta name="color-scheme" content="light">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="BioPlant AI">
+  <link rel="preload" href="fonts/outfit-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <img class="brand-logo" src="icons/logo.svg" alt="Logo de BioPlant AI" width="36" height="36">
+        <div class="brand-text">
+          <span class="brand-name">BioPlant AI</span>
+          <span class="brand-sub" id="subtitle">Diagnóstico</span>
+        </div>
+      </div>
+      <span class="chip chip-offline" id="offline-chip" hidden></span>
+      <button class="icon-btn" id="help-btn" type="button" aria-label="Ayuda" aria-haspopup="dialog"></button>
+    </header>
+
+    <main id="screen" class="screen" tabindex="-1"></main>
+
+    <nav class="tabbar" aria-label="Secciones">
+      <button class="tab" type="button" data-tab="diagnostico" aria-current="page">
+        <span class="tab-icon" data-icon="scan"></span>
+        <span>Diagnóstico</span>
+      </button>
+      <button class="tab" type="button" data-tab="historial">
+        <span class="tab-icon" data-icon="history"></span>
+        <span>Historial</span>
+      </button>
+    </nav>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+
+  <input type="file" id="file-camera" accept="image/*" capture="environment" hidden>
+  <input type="file" id="file-gallery" accept="image/*" hidden>
+
+  <dialog class="sheet" id="help" aria-labelledby="help-title">
+    <div class="sheet-head">
+      <h2 id="help-title">Cómo usar BioPlant AI</h2>
+      <button class="icon-btn" type="button" data-close aria-label="Cerrar ayuda"></button>
+    </div>
+    <div class="sheet-body">
+      <h3>Para una buena foto</h3>
+      <ul class="tips">
+        <li>Fotografía <strong>una sola mazorca</strong>, de cerca, ocupando casi todo el recuadro.</li>
+        <li>Busca luz pareja: evita sombras fuertes y el sol directo detrás del fruto.</li>
+        <li>Mantén el teléfono quieto hasta que la imagen esté enfocada.</li>
+        <li>Si el resultado sale poco confiable, repite la foto desde otro ángulo.</li>
+      </ul>
+      <h3>Cómo funciona</h3>
+      <ol class="how">
+        <li><strong>Filtro:</strong> un primer modelo comprueba que la foto sea de una mazorca de cacao.</li>
+        <li><strong>Diagnóstico:</strong> un segundo modelo identifica si está sana o tiene Moniliasis, Fitoftora o Escoba de bruja.</li>
+      </ol>
+      <h3>Privacidad</h3>
+      <p>Las fotos se analizan en tu teléfono. No se envían a ningún servidor y el historial queda guardado solo en este dispositivo. Tras la primera carga, la app funciona sin internet.</p>
+      <p class="note">BioPlant AI es una herramienta de apoyo. Confirma el diagnóstico con un técnico agrónomo antes de tomar decisiones de manejo.</p>
+    </div>
+  </dialog>
+
+  <script src="vendor/tf.min.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+{
+  "_nota": "Contenido base. Validar con un técnico agrónomo antes de publicar. Las recomendaciones son de manejo cultural: no incluir curas ni dosis de productos químicos.",
+  "moniliasis": {
+    "nombre": "Moniliasis",
+    "tipoAgente": "Hongo",
+    "agente": "Moniliophthora roreri",
+    "sintomaPrincipal": "Abultamientos y maduración despareja",
+    "descripcion": "Manchas o abultamientos irregulares y maduración despareja del fruto. Después aparece una mancha marrón que se cubre de una capa blanca-crema y pasa a color ceniza cuando libera esporas.",
+    "seccion": "Tratamiento y recomendaciones",
+    "pasos": [
+      { "icono": "basket", "titulo": "Retira los frutos enfermos", "texto": "Recorre el lote cada semana y corta los frutos con síntomas, antes de que se cubran de la capa blanca o ceniza." },
+      { "icono": "scissors", "titulo": "Poda para airear", "texto": "Elimina ramas entrecruzadas y chupones para que entre luz y circule el aire; así baja la humedad que favorece al hongo." },
+      { "icono": "drop", "titulo": "Drena y entierra lo retirado", "texto": "Mejora el drenaje del lote. Entierra o cubre los frutos retirados para que las esporas no se dispersen." }
+    ]
+  },
+  "fitoftora": {
+    "nombre": "Fitoftora (mazorca negra)",
+    "tipoAgente": "Oomiceto",
+    "agente": "Phytophthora spp.",
+    "sintomaPrincipal": "Mancha chocolate de borde definido",
+    "descripcion": "Mancha marrón chocolate de borde definido que avanza rápido hasta cubrir todo el fruto. Con humedad alta aparece un vello blanco sobre la mancha.",
+    "seccion": "Tratamiento y recomendaciones",
+    "pasos": [
+      { "icono": "basket", "titulo": "Retira y aparta los frutos", "texto": "Corta los frutos afectados en cuanto veas la mancha y sácalos del lote para que no contagien a los sanos." },
+      { "icono": "sun", "titulo": "Regula la sombra y poda", "texto": "Ralea la sombra y poda el árbol para que entre luz y se seque antes; la humedad constante acelera la enfermedad." },
+      { "icono": "drop", "titulo": "Evita el agua estancada", "texto": "Mejora el drenaje y evita que el agua se acumule alrededor de los árboles, sobre todo en temporada de lluvias." }
+    ]
+  },
+  "escoba_de_bruja": {
+    "nombre": "Escoba de bruja",
+    "tipoAgente": "Hongo",
+    "agente": "Moniliophthora perniciosa",
+    "sintomaPrincipal": "Frutos deformes y pudrición seca",
+    "descripcion": "Deformaciones del fruto (forma de zanahoria o de fresa), manchas negras duras y pudrición seca. En los brotes se forman ramas con crecimiento en forma de «escoba».",
+    "seccion": "Tratamiento y recomendaciones",
+    "pasos": [
+      { "icono": "scissors", "titulo": "Poda fitosanitaria", "texto": "Corta las escobas y brotes deformes por debajo del tejido afectado, dejando solo madera sana." },
+      { "icono": "basket", "titulo": "Retira los frutos enfermos", "texto": "Quita del árbol los frutos deformes o con manchas negras, aunque parezcan secos." },
+      { "icono": "shovel", "titulo": "Aleja o entierra lo cortado", "texto": "No dejes escobas ni frutos enfermos bajo el árbol: sácalos del lote o entiérralos." }
+    ]
+  },
+  "sano": {
+    "nombre": "Cacao sano",
+    "tipoAgente": null,
+    "agente": "Ninguno detectado",
+    "sintomaPrincipal": "Ninguno visible",
+    "descripcion": "Sigue vigilando el lote: las enfermedades del cacao se controlan mejor cuando se detectan pronto.",
+    "seccion": "Vigilancia periódica",
+    "pasos": [
+      { "icono": "eye", "titulo": "Revisa cada semana", "texto": "Recorre el lote buscando manchas, abultamientos, deformaciones o maduración despareja en los frutos." },
+      { "icono": "camera", "titulo": "Vuelve a fotografiar si cambia", "texto": "Si notas cambios de color o textura en una mazorca, analiza una foto nueva." },
+      { "icono": "history", "titulo": "Lleva un registro", "texto": "Guarda tus diagnósticos en el historial para seguir la evolución de cada zona del lote." }
+    ]
+  }
+}

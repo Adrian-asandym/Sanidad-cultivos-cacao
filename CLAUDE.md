@@ -1,0 +1,57 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## What this is
+
+BioPlant AI: an offline-first PWA (Spanish UI) that diagnoses cacao pods from a photo. All inference runs in the browser with TensorFlow.js — no backend. The repo also holds the Python tooling that trains and converts the Keras models the app consumes. See `README.md` for the full model history, evaluation numbers and known limitations.
+
+## Commands
+
+```bash
+# Run the app (no build step; vanilla HTML/CSS/JS). Camera + service worker need https or localhost.
+python -m http.server 8080 -d app
+
+# Train the "is it cacao?" filter from dataset/cacao + dataset/otros -> modelo3/ (~10 min CPU)
+python entrenamiento_filtro_cacao/entrenar.py
+
+# Evaluate a filter .keras on any folder with cacao/ and otros/ subfolders
+python entrenamiento_filtro_cacao/evaluar.py modelo3/modelo_cacao.keras FOLDER --detalle [--umbral 0.5]
+
+# Convert a Keras 3 .keras into an app model folder (also self-verifies flattening)
+python tools/convert_keras_to_tfjs.py modelo3/modelo_cacao.keras app/models/filtro-cacao --config modelo3/config_cacao.json
+
+# Verify converted models load in TF.js and match Keras outputs
+cd tools && npm install && npm run verify
+
+# Regenerate PWA PNG icons
+python tools/make_icons.py
+```
+
+There is no test suite, linter, or bundler. Python env: TensorFlow 2.21 / Keras 3 (`tensorflowjs` pip package is installed but broken and unused).
+
+## Architecture
+
+**Two-stage inference pipeline** (`app/js/app.js` → `analyze()`):
+1. `isCacao()` — filter model `app/models/filtro-cacao/` (from `modelo3/`). If `P(cacao) < CONFIG.filtro.umbral`, the UI shows "No se puede analizar esta imagen… No es un cacao" and stops; there is intentionally no override.
+2. `predict()` — disease model `app/models/estado-cacao/` (from `modelo_cacao_estado/`), labels `sano | moniliasis | fitoftora | escoba_de_bruja`. Confidence `< LOW_CONFIDENCE` (0.6) renders the amber "no concluyente" state.
+
+**`app/js/model-adapter.js` is the only module that touches TF.js.** The UI depends solely on the `isCacao`/`predict` contract. Model class names → UI labels are mapped in its `CONFIG` (e.g. `monilia` → `moniliasis`, `cacao_sano` → `sano`). Swapping a model = replace files in `app/models/<dir>/` + adjust `CONFIG` if classes change; UI code should not change.
+
+**Preprocessing must match training exactly.** Training (`entrenar.py: cargar_imagen`) uses PIL: EXIF transpose, white background for alpha, `resize((224,224), BILINEAR)` with no crop, pixels 0..255 float. The adapter reimplements PIL's antialiased bilinear in JS (`resizeBilinearPIL`) — the browser's canvas resize deviated up to 0.22 in probability. Normalization (`Rescaling` to [-1,1]) lives *inside* the models, so the app always feeds 0..255. If you change preprocessing on one side, change it on the other.
+
+**Model conversion is custom on purpose.** The official TF.js converter can't read Keras 3 configs, and a Keras-3-style `model.json` fails in TF.js (`modelo1/` is exactly that and does not load). `tools/convert_keras_to_tfjs.py` flattens nested submodels (MobileNetV2) into one graph via `Functional._run_through_graph`, drops training-only layers (`Random*` augmentations, `Dropout`), rewrites config to Keras-2/TF.js format (DepthwiseConv2D weight `kernel` → `depthwise_kernel`), asserts flat == original, and stores expected outputs in `metadata.json` that `verify_tfjs.mjs` checks. New augmentation layers must keep the `Random` class-name prefix or the converter won't strip them.
+
+**Offline/PWA:** `app/sw.js` is cache-first and precaches the app shell plus every shard listed in each `model.json`. **Bump `VERSION` in `app/sw.js` whenever anything under `app/` changes** (code, `diseases.json`, or models), otherwise installed clients keep stale files. Third-party assets (TF.js 4.22.0, Outfit font) are self-hosted — no CDNs.
+
+**UI** (`app.js`) is a small state machine rendering screens via template strings into `#screen`, with click delegation on `data-action` attributes. History is IndexedDB-only (`history-db.js`), storing a thumbnail Blob, never the full photo. Disease texts/recommendations live in `app/data/diseases.json`, not in components.
+
+## Design and content constraints
+
+UI must follow the design skill in `Cacao disease ui-v1/skills/cacao-disease-ui/SKILL.md`: mobile-first max 430px, Spanish UI, tokens (`#0B6B45` green, `#6EF2B0` mint, etc.), no CDN, don't show severity/phase or any value the models don't produce, recommendations are cultural management only (no chemical products or doses), 44px touch targets, `prefers-reduced-motion` respected.
+
+## Models and data
+
+- `modelo3/` — current filter (trained here). `modelo1/` (.bin) and `modelo2/` (.keras) are the old filter: bit-identical weights, degenerate (predicts "cacao" for everything); kept untouched at the user's request.
+- `dataset/` (gitignored, along with `*.jpg` and the training `cache/`) — `cacao/**` and `otros/**`, 600 each. `entrenar.py` splits train/val/test **by photo session** (`grupo()` collapses `IMG_YYYYMMDD` bursts) to avoid near-duplicate leakage; keep that when changing the split.
+- In-dataset test accuracy overstates real performance; judge filter changes on images from other sources (external set gave 87.8% vs 98.9% in-dataset). Known weakness: leaf-litter/branch photos labeled `cacao` make the model accept forest-floor images.

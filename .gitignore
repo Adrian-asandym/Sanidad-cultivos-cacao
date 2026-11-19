@@ -1,0 +1,24 @@
+# Imágenes de entrenamiento (pesadas; se comparten aparte, no en git)
+dataset/
+*.jpg
+*.jpeg
+*.JPG
+*.JPEG
+*.webp
+*.heic
+*.HEIC
+
+# Caché y artefactos temporales del entrenamiento
+entrenamiento_filtro_cacao/cache/
+*.npz
+*.zip
+
+# Dependencias y archivos generados
+node_modules/
+__pycache__/
+*.pyc
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini

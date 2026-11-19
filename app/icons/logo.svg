@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="BioPlant AI">
+  <rect width="48" height="48" rx="14" fill="#0B6B45"/>
+  <path d="M24 9c6.6 0 10 7 10 15s-3.4 15-10 15-10-7-10-15 3.4-15 10-15z" fill="#6EF2B0"/>
+  <path d="M24 9v30M19.2 11c-1.6 3.6-2.3 8.3-2.3 13s.7 9.4 2.3 13M28.8 11c1.6 3.6 2.3 8.3 2.3 13s-.7 9.4-2.3 13" fill="none" stroke="#0B6B45" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M24 9c1.5-3 4.4-4.4 7.6-4.2-.5 3.1-3.4 5-7.6 4.2z" fill="#6EF2B0"/>
+</svg>

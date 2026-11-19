@@ -1,0 +1,25 @@
+{
+  "clases": [
+    "cacao",
+    "otros"
+  ],
+  "nombres": [
+    "cacao",
+    "otros"
+  ],
+  "image_size": [
+    224,
+    224
+  ],
+  "entrada": "RGB float32, 0..255; normalización incluida en el modelo (Rescaling a [-1, 1])",
+  "resize": "PIL bilinear, con orientación EXIF y fondo blanco para transparencias",
+  "arquitectura": "MobileNetV2 (ImageNet) + GlobalAveragePooling2D + Dropout(0.3) + Dense(2, softmax)",
+  "keras_version": "3.15.1",
+  "tensorflow_version": "2.21.0",
+  "metricas_test": {
+    "accuracy": 0.9888888888888889,
+    "loss": 0.11854512989521027,
+    "recall_cacao": 1.0,
+    "recall_otros": 0.9777777777777777
+  }
+}

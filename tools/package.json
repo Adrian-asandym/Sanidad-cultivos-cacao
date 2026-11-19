@@ -1,0 +1,12 @@
+{
+  "name": "bioplant-ai-tools",
+  "private": true,
+  "type": "module",
+  "description": "Verificación de los modelos convertidos a TensorFlow.js",
+  "scripts": {
+    "verify": "node verify_tfjs.mjs ../app/models/filtro-cacao ../app/models/estado-cacao"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs": "4.22.0"
+  }
+}

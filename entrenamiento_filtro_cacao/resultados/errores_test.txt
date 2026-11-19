@@ -1,0 +1,2 @@
+otros_fruta_planta_316.jpg	real=otros	P(cacao)=0.705
+otros_fruta_planta_384.jpg	real=otros	P(cacao)=0.649
