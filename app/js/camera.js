@@ -57,14 +57,18 @@ export function cameraErrorMessage(err) {
 }
 
 /** Miniatura cuadrada (recorte centrado) para el historial. */
-export async function makeThumbnail(blob, size = 240) {
+export async function makeThumbnail(blob, size = 240, { crop = true } = {}) {
   const bmp = await createImageBitmap(blob, { imageOrientation: 'from-image' });
   const side = Math.min(bmp.width, bmp.height);
   const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = size;
+  const width = crop ? side : bmp.width;
+  const height = crop ? side : bmp.height;
+  const scale = crop ? size / side : Math.min(1, size / Math.max(width, height));
+  canvas.width = Math.max(1, Math.round(width * scale));
+  canvas.height = Math.max(1, Math.round(height * scale));
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, size, size);
+  ctx.drawImage(bmp, (bmp.width - width) / 2, (bmp.height - height) / 2, width, height, 0, 0, canvas.width, canvas.height);
   bmp.close();
   return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.8));
 }

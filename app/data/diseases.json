@@ -49,7 +49,7 @@
     "pasos": [
       { "icono": "eye", "titulo": "Revisa cada semana", "texto": "Recorre el lote buscando manchas, abultamientos, deformaciones o maduración despareja en los frutos." },
       { "icono": "camera", "titulo": "Vuelve a fotografiar si cambia", "texto": "Si notas cambios de color o textura en una mazorca, analiza una foto nueva." },
-      { "icono": "history", "titulo": "Lleva un registro", "texto": "Guarda tus diagnósticos en el historial para seguir la evolución de cada zona del lote." }
+      { "icono": "history", "titulo": "Lleva un registro", "texto": "Consulta tus diagnósticos guardados automáticamente para seguir la evolución de cada zona del lote." }
     ]
   }
 }

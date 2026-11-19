@@ -1,14 +1,14 @@
 // Service worker: guarda la app y los modelos para que funcione sin internet.
 // Sube VERSION cada vez que cambies archivos de la app o de los modelos.
-const VERSION = 'v3';
+const VERSION = 'v8';
 const CACHE = `bioplant-${VERSION}`;
 
 const SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './css/styles.css',
-  './js/app.js',
+  './css/styles.css?v=8',
+  './js/app.js?v=8',
   './js/model-adapter.js',
   './js/history-db.js',
   './js/camera.js',
@@ -42,7 +42,8 @@ async function modelFiles() {
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
-    await cache.addAll([...SHELL, ...(await modelFiles())]);
+    const files = [...SHELL, ...(await modelFiles())];
+    await cache.addAll(files.map((file) => new Request(file, { cache: 'reload' })));
     await self.skipWaiting();
   })());
 });
@@ -61,14 +62,14 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
-    const cached = await cache.match(request, { ignoreSearch: true });
-    if (cached) return cached;
+    const cached = await cache.match(request);
+    if (cached && request.mode !== 'navigate') return cached;
     try {
-      const response = await fetch(request);
+      const response = await fetch(request, { cache: 'no-cache' });
       if (response.ok) cache.put(request, response.clone());
       return response;
     } catch (err) {
-      if (request.mode === 'navigate') return cache.match('./index.html');
+      if (request.mode === 'navigate') return cached || cache.match('./index.html');
       throw err;
     }
   })());

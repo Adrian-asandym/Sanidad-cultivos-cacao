@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="BioPlant AI">
   <link rel="preload" href="fonts/outfit-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=8">
 </head>
 <body>
   <div class="app">
@@ -72,7 +72,16 @@
     </div>
   </dialog>
 
+  <dialog class="photo-dialog" id="photo-dialog" aria-label="Foto analizada ampliada">
+    <div class="photo-dialog-content">
+      <form method="dialog">
+        <button class="icon-btn" aria-label="Cerrar foto" autofocus>×</button>
+      </form>
+      <img alt="Foto analizada ampliada">
+    </div>
+  </dialog>
+
   <script src="vendor/tf.min.js"></script>
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/app.js?v=8"></script>
 </body>
 </html>
