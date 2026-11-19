@@ -256,7 +256,11 @@ predict(imagen: Blob | ImageBitmap) -> Promise<{
 
 La interfaz sigue la skill `Cacao disease ui-v1/skills/cacao-disease-ui/SKILL.md`:
 
-- Mobile-first (máximo 430 px) y tipografía Outfit.
+- Tipografía Outfit.
+- **Responsiva** (se aparta de la skill, que pedía una columna fija de 430 px):
+  - **Móvil (< 600 px):** una columna fluida con pestañas abajo. El visor se limita para que el botón principal se vea sin hacer scroll.
+  - **Tablet (≥ 600 px):** contenido de hasta 720 px. El visor es apaisado y el historial y los pasos se muestran en cuadrícula. La ayuda abre como diálogo centrado.
+  - **Escritorio, tablet horizontal y móvil horizontal (≥ 840 px):** las pestañas pasan a un riel lateral. En la captura, el visor queda a un lado y las acciones y consejos al otro. En el resultado, el diagnóstico va a un lado y las recomendaciones al otro.
 - Verde `#0B6B45` y menta `#6EF2B0`.
 - Tarjeta de diagnóstico con anillo de confianza.
 - Tres pasos de manejo cultural.

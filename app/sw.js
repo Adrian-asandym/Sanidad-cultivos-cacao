@@ -1,6 +1,6 @@
 // Service worker: guarda la app y los modelos para que funcione sin internet.
 // Sube VERSION cada vez que cambies archivos de la app o de los modelos.
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE = `bioplant-${VERSION}`;
 
 const SHELL = [

@@ -44,7 +44,10 @@ function ring(p, size, stroke) {
   </svg>`;
 }
 
-function render(html, { focus = true } = {}) {
+// `layout` elige la disposición responsiva de la pantalla (ver .layout-* en styles.css).
+// El orden del HTML es siempre el del móvil; en pantallas anchas CSS Grid lo reubica.
+function render(html, { focus = true, layout = 'narrow' } = {}) {
+  html = `<div class="layout layout-${layout}">${html}</div>`;
   screenEl.innerHTML = html;
   // Libera las imágenes que ya no aparecen en pantalla (la foto actual se gestiona aparte).
   const keep = pageUrls.filter((u) => html.includes(u));
@@ -143,24 +146,43 @@ function renderCapture({ focus = true } = {}) {
   }
 
   render(`
-    <div>
+    <div class="area-title">
       <h1 class="screen-title" tabindex="-1" data-focus>Nuevo diagnóstico</h1>
       <p class="screen-lead">Identifica Moniliasis, Fitoftora o Escoba de bruja.</p>
     </div>
-    <section class="card" aria-label="Foto de la mazorca">
+    <section class="card area-media" aria-label="Foto de la mazorca">
       <div class="viewfinder" data-mode="${m}">
         ${inner}
         <div class="frame-guide" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
       </div>
       <p class="guide">${icon('pod')} Centra la mazorca y evita sombras fuertes</p>
     </section>
-    <div class="stack">${actions}</div>
-    ${modelStatusHtml()}
-  `, { focus });
+    <div class="stack area-actions">${actions}</div>
+    <div class="area-status">${modelStatusHtml()}</div>
+    <aside class="card tips-card area-tips only-wide" aria-labelledby="tips-title">
+      <h2 id="tips-title">Para una buena foto</h2>
+      <ul class="tips">
+        <li>Fotografía <strong>una sola mazorca</strong>, de cerca, ocupando casi todo el recuadro.</li>
+        <li>Busca luz pareja: evita sombras fuertes y el sol directo detrás del fruto.</li>
+        <li>Si el resultado sale poco confiable, repite la foto desde otro ángulo.</li>
+      </ul>
+      <h2>Cómo funciona</h2>
+      <ol class="how">
+        <li><strong>Filtro:</strong> comprueba que la foto sea de una mazorca de cacao.</li>
+        <li><strong>Diagnóstico:</strong> identifica si está sana o tiene Moniliasis, Fitoftora o Escoba de bruja.</li>
+      </ol>
+    </aside>
+  `, { focus, layout: 'capture' });
 
   if (m === 'live') {
-    startCamera($('#video')).catch((err) => {
+    const video = $('#video');
+    startCamera(video).then(() => {
+      if (state.vfMode !== 'live' || !video.isConnected) stopCamera();
+    }).catch((err) => {
       console.warn(err);
+      // La cámara responde de forma asíncrona: si mientras tanto se cambió de
+      // pantalla, no se redibuja la captura encima de la pantalla actual.
+      if (state.vfMode !== 'live' || !video.isConnected) { stopCamera(); return; }
       state.vfMode = 'error';
       state.vfError = cameraErrorMessage(err);
       renderCapture();
@@ -308,8 +330,8 @@ function renderResult(rec, { photoUrl, fromHistory = false } = {}) {
   }
 
   render(`
-    ${fromHistory ? `<button class="back-link" type="button" data-action="back-history">${icon('back')} Historial</button>` : ''}
-    <article class="card diag-card" aria-labelledby="diag-name">
+    ${fromHistory ? `<button class="back-link area-back" type="button" data-action="back-history">${icon('back')} Historial</button>` : ''}
+    <article class="card diag-card area-diag" aria-labelledby="diag-name">
       ${photoUrl ? `<div class="diag-photo"><img src="${photoUrl}" alt="Foto analizada de la mazorca"></div>` : ''}
       <div class="diag-head">
         <div>
@@ -334,7 +356,7 @@ function renderResult(rec, { photoUrl, fromHistory = false } = {}) {
       <p class="diag-desc">${esc(d.descripcion)}</p>
     </article>
 
-    <section class="treatment" aria-labelledby="treat-title">
+    <section class="treatment area-treat" aria-labelledby="treat-title">
       <div class="treatment-head">
         <span class="circle">${icon(healthy ? 'eye' : 'doc')}</span>
         <h3 id="treat-title">${esc(d.seccion)}</h3>
@@ -342,9 +364,9 @@ function renderResult(rec, { photoUrl, fromHistory = false } = {}) {
       <ol class="step-list">${steps}</ol>
     </section>
 
-    <p class="disclaimer">Resultado orientativo generado por IA. Confírmalo con un técnico agrónomo antes de tomar decisiones de manejo.</p>
-    <div class="stack">${actions}</div>
-  `);
+    <p class="disclaimer area-disc">Resultado orientativo generado por IA. Confírmalo con un técnico agrónomo antes de tomar decisiones de manejo.</p>
+    <div class="stack area-actions">${actions}</div>
+  `, { layout: fromHistory ? 'result has-back' : 'result' });
 }
 
 async function saveCurrent() {
@@ -410,7 +432,7 @@ async function renderHistory({ focus = true } = {}) {
       <p class="screen-lead">${items.length} ${items.length === 1 ? 'diagnóstico guardado' : 'diagnósticos guardados'} en este dispositivo</p>
     </div>
     <ul class="hist-list">${rows}</ul>
-  `, { focus });
+  `, { focus, layout: 'history' });
 }
 
 async function openHistoryItem(id) {

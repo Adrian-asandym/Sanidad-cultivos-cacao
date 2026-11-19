@@ -48,7 +48,9 @@ There is no test suite, linter, or bundler. Python env: TensorFlow 2.21 / Keras 
 
 ## Design and content constraints
 
-UI must follow the design skill in `Cacao disease ui-v1/skills/cacao-disease-ui/SKILL.md`: mobile-first max 430px, Spanish UI, tokens (`#0B6B45` green, `#6EF2B0` mint, etc.), no CDN, don't show severity/phase or any value the models don't produce, recommendations are cultural management only (no chemical products or doses), 44px touch targets, `prefers-reduced-motion` respected.
+UI must follow the design skill in `Cacao disease ui-v1/skills/cacao-disease-ui/SKILL.md`: Spanish UI, tokens (`#0B6B45` green, `#6EF2B0` mint, etc.), no CDN, don't show severity/phase or any value the models don't produce, recommendations are cultural management only (no chemical products or doses), 44px touch targets, `prefers-reduced-motion` respected.
+
+Exception to the skill: by user request the app is **responsive** instead of a fixed 430px column. Breakpoints in `styles.css` ("Responsivo" section): `<600` mobile single column with bottom tabs; `≥600` tablet (content max 720px, grids for history and steps); `≥840` the tab bar becomes a fixed left rail and capture/result screens go two-column. Each `render()` call in `app.js` passes a `layout` (`capture`, `result`, `history`, default `narrow`). The HTML order is always the mobile reading order, and wide layouts rearrange it with `grid-template-areas` on the `.area-*` classes, so keep new blocks in mobile order and give them an area. Width comes from `--content-max`/`--pad-inline` on `:root`. Watch specificity: the tablet rule `.area-actions:has(...)` beats two-class selectors.
 
 ## Models and data
 
