@@ -10,6 +10,12 @@ Aplicación web progresiva (PWA) que identifica, a partir de una foto de una maz
 
 ---
 
+## Consultas sobre cacao
+
+La pestaña **Consultar** permite buscar síntomas y prácticas de manejo desde el inicio. En un resultado, cada recomendación abre una pregunta sugerida a partir de ese resultado. La app busca en el corpus local y muestra extractos con la fuente y las páginas del PDF. Las consultas están disponibles sin conexión tras la primera instalación de la caché.
+
+Para actualizar el corpus, sustituye el archivo de `app/data/cacao_chunks.jsonl` y cambia `VERSION` en `app/sw.js`. El archivo contiene un registro JSON por línea en UTF-8. La app usa los campos `texto`, `enfermedad`, `tipo_control`, `fuente`, `seccion` y `paginas`.
+
 ## Cómo funciona
 
 ```
