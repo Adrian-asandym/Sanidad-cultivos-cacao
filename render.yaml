@@ -1,0 +1,25 @@
+# Blueprint de Render: publica la PWA de app/ como sitio estático (sin backend).
+# Render no lee app/_headers ni netlify.toml; las cabeceras se definen aquí.
+services:
+  - type: web
+    runtime: static
+    name: bioplant-ai
+    branch: main
+    buildCommand: echo "Sin paso de build"
+    staticPublishPath: ./app
+    headers:
+      # El service worker y la página deben revalidarse siempre para que las
+      # versiones nuevas (VERSION en sw.js) lleguen a los teléfonos.
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache
+      - path: /
+        name: Cache-Control
+        value: no-cache
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
+      # TF.js necesita 'unsafe-eval'; no hay scripts en línea ni de terceros.
+      - path: /*
+        name: Content-Security-Policy
+        value: "script-src 'self' 'unsafe-eval'"

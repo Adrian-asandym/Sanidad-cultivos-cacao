@@ -79,6 +79,8 @@ tools/
   verify_tfjs.mjs            ← comprueba que el modelo convertido da lo mismo en TF.js
   make_icons.py              ← regenera los iconos PNG
 Cacao disease ui-v1/         ← skill de diseño de la interfaz
+render.yaml                  ← despliegue en Render (sitio estático de app/)
+netlify.toml                 ← despliegue en Netlify (cabeceras en app/_headers)
 ```
 
 ## Puesta en marcha
@@ -94,6 +96,7 @@ python -m http.server 8080 -d app
 
 - **GitHub Pages:** en *Settings → Pages*, publica desde una rama con el contenido de `app/` (o usa una GitHub Action que suba `app/`).
 - **Netlify / Vercel / Cloudflare Pages:** arrastra la carpeta `app/` o configura `app` como directorio de publicación, sin comando de build.
+- **Render:** créalo como **Static Site**, no como *Web Service* (la app no tiene servidor). La forma más simple es *New → Blueprint* y elegir este repositorio: `render.yaml` ya define el directorio de publicación (`app`) y las cabeceras (`Cache-Control: no-cache` para `sw.js` e `index.html`, y la CSP que necesita TF.js). Si lo creas a mano (*New → Static Site*), deja vacío el comando de build, pon `app` como *Publish Directory* y copia esas cabeceras en *Settings → Headers*, porque Render no lee `app/_headers` ni `netlify.toml`.
 
 La primera carga descarga unos 21 MB (dos modelos de ~9.5 MB, más TensorFlow.js). Después todo queda en caché.
 
