@@ -4,6 +4,7 @@ import {
   cameraSupported, startCamera, stopCamera, cameraActive, captureFrame, cameraErrorMessage, makeThumbnail,
 } from './camera.js';
 import { icon } from './icons.js';
+import { consult } from './consultation.js';
 
 const LOW_CONFIDENCE = 0.6;
 
@@ -31,6 +32,8 @@ const state = {
 };
 
 let diseases = {};
+let viewedResult = null;
+let consultation = null;
 let pageUrls = []; // object URLs de la pantalla actual (se liberan al cambiar)
 
 // ------------------------------------------------------------------ utilidades
@@ -52,6 +55,7 @@ function ring(p, size, stroke) {
 }
 
 function render(html, { focus = true } = {}) {
+  viewedResult = null;
   screenEl.innerHTML = html;
   // Libera las imágenes que ya no aparecen en pantalla (la foto actual se gestiona aparte).
   const keep = pageUrls.filter((u) => html.includes(u));
@@ -245,7 +249,8 @@ async function analyze() {
 
     if (state.photo === photo) state.current = record;
     if (isCurrentPhoto()) renderResult(record, { photoUrl: state.photoUrl });
-    if (state.tab === 'historial') await renderHistory({ focus: false });
+    if (state.tab === 'historial' && !viewedResult) await renderHistory({ focus: false });
+    if (state.tab === 'consultas' && consultation.useCurrent) refreshConsultationContext();
   } catch (err) {
     console.error(err);
     if (isCurrentPhoto()) renderAnalysisError();
@@ -302,7 +307,11 @@ function renderNotCacao(rec, { photoUrl, fromHistory }) {
 
 // ------------------------------------------------------------------ pantalla: resultado
 function renderResult(rec, { photoUrl, fromHistory = false } = {}) {
-  if (rec.label === 'no_cacao') { renderNotCacao(rec, { photoUrl, fromHistory }); return; }
+  if (rec.label === 'no_cacao') {
+    renderNotCacao(rec, { photoUrl, fromHistory });
+    viewedResult = { rec, fromHistory };
+    return;
+  }
   const d = diseases[rec.label];
   if (!d) { renderAnalysisError(); return; }
   const low = rec.confidence < LOW_CONFIDENCE;
@@ -320,12 +329,15 @@ function renderResult(rec, { photoUrl, fromHistory = false } = {}) {
   }
 
   const steps = d.pasos.map((p, i) => `
-    <li class="step-card">
-      <span class="step-icon">${icon(p.icono)}</span>
-      <div>
-        <h4>${healthy ? '' : `Paso ${i + 1}: `}${esc(p.titulo)}</h4>
-        <p>${esc(p.texto)}</p>
-      </div>
+    <li>
+      <button class="step-card step-question" type="button" data-action="consult-step" data-step="${i}">
+        <span class="step-icon">${icon(p.icono)}</span>
+        <span>
+          <strong class="step-title">${healthy ? '' : `Paso ${i + 1}: `}${esc(p.titulo)}</strong>
+          <span class="step-text">${esc(p.texto)}</span>
+        </span>
+        ${icon('consult', { size: 18 })}
+      </button>
     </li>`).join('');
 
   let actions;
@@ -371,11 +383,118 @@ function renderResult(rec, { photoUrl, fromHistory = false } = {}) {
         <h3 id="treat-title">${esc(d.seccion)}</h3>
       </div>
       <ol class="step-list">${steps}</ol>
+      <button class="btn btn-secondary" type="button" data-action="consult-result">${icon('consult')} Preguntar sobre el resultado</button>
     </section>
 
-    <p class="disclaimer">Resultado orientativo generado por IA. Confírmalo con un técnico agrónomo antes de tomar decisiones de manejo.</p>
+    <p class="disclaimer">Usa este resultado para orientar la revisión de tu cultivo. Un técnico agrónomo puede confirmar el diagnóstico.</p>
     <div class="stack">${actions}</div>
   `);
+  viewedResult = { rec, fromHistory };
+}
+
+// ------------------------------------------------------------------ pantalla: consultas
+const GENERAL_QUESTIONS = [
+  '¿Cómo reconozco la moniliasis?',
+  '¿Cómo se maneja la mazorca negra?',
+  '¿Cómo la poda ayuda a controlar la escoba de bruja?',
+];
+const STEP_QUESTIONS = {
+  moniliasis: ['¿Cada cuánto retiro los frutos con moniliasis?', '¿Cómo ayuda la poda contra la moniliasis?', '¿Cómo ayuda el drenaje contra la moniliasis?'],
+  fitoftora: ['¿Cuándo recojo los frutos con fitoftora?', '¿Cómo regulo la sombra para manejar la fitoftora?', '¿Cómo ayuda el drenaje contra la fitoftora?'],
+  escoba_de_bruja: ['¿Qué poda se recomienda para la escoba de bruja?', '¿Cuándo retiro los frutos con escoba de bruja?', '¿Cómo manejo los residuos de la escoba de bruja?'],
+  sano: ['¿Qué síntomas debo vigilar en las mazorcas?', '¿Qué cambios en la mazorca indican una enfermedad?', '¿Cómo ayudan la poda y el manejo de la sombra a prevenir enfermedades?'],
+};
+
+function consultationRecord() {
+  return consultation.useCurrent ? state.current : consultation.record;
+}
+
+function openConsultation({ step = null } = {}) {
+  const origin = viewedResult;
+  consultation = {
+    record: origin?.rec,
+    useCurrent: !origin,
+    historyId: origin?.fromHistory ? origin.rec.id : null,
+    step,
+    returnToResult: Boolean(origin && diseases[origin.rec.label]),
+  };
+  setTab('consultas');
+}
+
+function refreshConsultationContext() {
+  const record = consultationRecord();
+  const disease = diseases[record?.label];
+  const step = disease?.pasos[consultation.step];
+  const low = record && record.confidence < LOW_CONFIDENCE;
+  const context = $('#consult-context');
+  if (!context) return;
+
+  context.innerHTML = disease ? `
+    <span class="chip">${icon(record.label === 'sano' && !low ? 'checkCircle' : 'scan')} ${low ? 'Resultado no concluyente · ' : ''}${esc(disease.nombre)}</span>
+    ${low ? '<p class="screen-lead">Repite la foto para confirmar el resultado. Puedes consultar las guías sobre esta enfermedad.</p>' : ''}
+    ${step ? `<div class="step-card"><span class="step-icon">${icon(step.icono)}</span><div><h4>${esc(step.titulo)}</h4><p>${esc(step.texto)}</p></div></div>` : ''}` : '';
+
+  const label = record?.label;
+  const specific = STEP_QUESTIONS[label] || [];
+  const suggested = step ? [specific[consultation.step], ...specific] : specific;
+  const questions = [...new Set([...suggested.filter(Boolean), ...GENERAL_QUESTIONS])].slice(0, 3);
+  $('#consult-suggestions').innerHTML = questions.map((question) => `
+    <button type="button" data-action="suggest-question" data-question="${esc(question)}">${esc(question)}</button>
+  `).join('');
+}
+
+function renderConsultation({ focus = true } = {}) {
+  render(`
+    <section class="consultation" aria-labelledby="consult-title">
+      ${consultation.returnToResult ? `<button class="back-link" type="button" data-action="back-result">${icon('back')} Volver al resultado</button>` : ''}
+      <header>
+        <h1 class="screen-title" id="consult-title" tabindex="-1" data-focus>Consultas sobre cacao</h1>
+        <p class="screen-lead">Pregunta por síntomas o prácticas de manejo.</p>
+      </header>
+      <div id="consult-context" class="consultation-context"></div>
+      <form id="consult-form" class="card consultation-form">
+        <label for="consult-question">Tu pregunta</label>
+        <textarea id="consult-question" rows="3" maxlength="350" placeholder="Escribe tu pregunta" required></textarea>
+        <div id="consult-suggestions" class="consultation-suggestions" role="group" aria-label="Preguntas sugeridas"></div>
+        <button class="btn btn-primary" name="ask" type="submit">${icon('consult')} Buscar respuesta</button>
+      </form>
+      <div id="consult-answer" class="consultation-answer" role="status" aria-live="polite" aria-atomic="true"></div>
+    </section>`, { focus });
+  refreshConsultationContext();
+  const step = consultation.step;
+  const label = consultationRecord()?.label;
+  if (step !== null) $('#consult-question').value = STEP_QUESTIONS[label]?.[step] || '';
+}
+
+async function answerQuestion(form) {
+  const question = $('#consult-question', form).value.trim();
+  const output = $('#consult-answer');
+  const button = form.elements.namedItem('ask');
+  if (button.disabled) return;
+  if (!question) {
+    output.innerHTML = '<p class="note">Escribe una pregunta sobre el cultivo del cacao.</p>';
+    return;
+  }
+  button.disabled = true;
+  output.innerHTML = '<p class="note">Buscando en las guías…</p>';
+  const record = consultationRecord();
+  const context = record?.confidence >= LOW_CONFIDENCE ? record.label : null;
+  try {
+    const answers = await consult(question, context);
+    if (!form.isConnected) return;
+    output.innerHTML = answers.length ? `<h2>Respuesta de las guías</h2>${answers.map((answer) => `
+      <article class="card consultation-source">
+        <h3>${esc(answer.section)}</h3>
+        <p>${esc(answer.text)}</p>
+        <cite>${esc(answer.source)} · ${answer.pages.length === 1 ? 'página PDF' : 'páginas PDF'} ${esc(answer.pages.join(', '))}</cite>
+      </article>`).join('')}`
+      : '<p class="note">No encontré una respuesta en las guías. Prueba con el nombre de la enfermedad y el síntoma o la práctica que quieres consultar.</p>';
+  } catch (error) {
+    console.error(error);
+    if (form.isConnected) output.innerHTML = '<p class="note">No se pudieron cargar las guías. Vuelve a intentar la consulta.</p>';
+  } finally {
+    button.disabled = false;
+  }
 }
 
 // ------------------------------------------------------------------ pantalla: historial
@@ -435,6 +554,7 @@ async function renderHistory({ focus = true } = {}) {
 
 async function openHistoryItem(id) {
   const rec = await getDiagnosis(id);
+  if (state.tab !== 'historial') return;
   if (!rec) { renderHistory(); return; }
   const photo = rec.preview || rec.thumb;
   renderResult(rec, { photoUrl: photo ? pageUrl(photo) : null, fromHistory: true });
@@ -452,7 +572,7 @@ async function removeItem(id, { thenHistory = true } = {}) {
 }
 
 // ------------------------------------------------------------------ navegación
-function setTab(tab, { focus = true } = {}) {
+function setTab(tab, { focus = true, historyId = null } = {}) {
   state.tab = tab;
   stopCamera();
   if (state.vfMode === 'live') state.vfMode = state.photo ? 'photo' : 'idle';
@@ -460,9 +580,12 @@ function setTab(tab, { focus = true } = {}) {
     if (b.dataset.tab === tab) b.setAttribute('aria-current', 'page');
     else b.removeAttribute('aria-current');
   });
-  $('#subtitle').textContent = tab === 'historial' ? 'Historial' : 'Diagnóstico';
-  if (tab === 'historial') renderHistory({ focus });
+  $('#subtitle').textContent = { diagnostico: 'Diagnóstico', consultas: 'Consultas', historial: 'Historial' }[tab];
+  if (tab === 'consultas') renderConsultation({ focus });
+  else if (tab === 'historial' && historyId) openHistoryItem(historyId);
+  else if (tab === 'historial') renderHistory({ focus });
   else if (state.current) renderResult(state.current, { photoUrl: state.photoUrl });
+  else if (state.analyzing) renderAnalyzing();
   else renderCapture({ focus });
 }
 
@@ -515,8 +638,26 @@ screenEl.addEventListener('click', async (e) => {
     case 'delete': removeItem(id); break;
     case 'delete-current': removeItem(id); break;
     case 'back-history': renderHistory(); break;
+    case 'consult-step': openConsultation({ step: Number(btn.dataset.step) }); break;
+    case 'consult-result': openConsultation(); break;
+    case 'suggest-question': {
+      const form = $('#consult-form');
+      $('#consult-question', form).value = btn.dataset.question;
+      form.requestSubmit();
+      break;
+    }
+    case 'back-result':
+      if (consultation.historyId) setTab('historial', { historyId: consultation.historyId });
+      else setTab('diagnostico');
+      break;
     default: break;
   }
+});
+
+screenEl.addEventListener('submit', (event) => {
+  if (event.target.id !== 'consult-form') return;
+  event.preventDefault();
+  answerQuestion(event.target);
 });
 
 function onFile(e) {
@@ -533,7 +674,9 @@ fileCamera.addEventListener('change', onFile);
 fileGallery.addEventListener('change', onFile);
 
 document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => {
-  if (b.dataset.tab === 'diagnostico' && state.tab === 'diagnostico' && state.current) {
+  if (b.dataset.tab === 'consultas') {
+    if (state.tab !== 'consultas') openConsultation();
+  } else if (b.dataset.tab === 'diagnostico' && state.tab === 'diagnostico' && state.current) {
     resetToCapture(); // tocar "Diagnóstico" en un resultado empieza uno nuevo
   } else {
     setTab(b.dataset.tab);
@@ -577,7 +720,7 @@ async function init() {
   } catch (err) {
     console.error('No se pudo leer diseases.json', err);
   }
-  renderCapture({ focus: false });
+  if (state.tab === 'diagnostico' && !screenEl.firstElementChild) renderCapture({ focus: false });
   bootModels();
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch((err) => console.warn('SW no registrado', err));

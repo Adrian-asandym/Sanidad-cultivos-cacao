@@ -16,6 +16,16 @@ La pestaña **Consultar** permite buscar síntomas y prácticas de manejo desde 
 
 Para actualizar el corpus, sustituye el archivo de `app/data/cacao_chunks.jsonl` y cambia `VERSION` en `app/sw.js`. El archivo contiene un registro JSON por línea en UTF-8. La app usa los campos `texto`, `enfermedad`, `tipo_control`, `fuente`, `seccion` y `paginas`.
 
+### Modo opcional con un modelo local
+
+El modo normal usa la búsqueda local y muestra extractos citados. Para activar la selección de citas con un LLM, abre Ollama con un modelo local ya instalado y ejecuta desde la raíz:
+
+```powershell
+python tools/servir_consultas.py --modelo NOMBRE_DEL_MODELO
+```
+
+Abre `http://127.0.0.1:8000/?llm=1`. El servidor envía la consulta y los fragmentos recuperados al Ollama local. La respuesta solo admite citas literales verificadas contra el corpus. Cuando el modelo carece del dato exacto, la consulta muestra el aviso de información insuficiente. La pestaña de consultas conserva la misma interfaz.
+
 ## Cómo funciona
 
 ```
