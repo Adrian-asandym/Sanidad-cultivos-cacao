@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "BioPlant AI en Android · funciona sin internet",
+    "locale": "es",
+    "output": ".archify/architecture-android-offline-20261128-005249/bioplant-android.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Adrian-asandym/Sanidad-cultivos-cacao.git",
+      "provider": "github",
+      "revision": "55fee6b50206dffac7e101b971073c8b1d78f909"
+    }
+  },
+  "components": [
+    {
+      "id": "agricultor", "type": "external", "label": "Agricultor", "sublabel": "sin señal en el campo",
+      "pos": [375, 40], "size": [130, 64],
+      "sources": [{ "path": "android/app/src/main/AndroidManifest.xml", "line": 12, "end_line": 25, "label": "actividad LAUNCHER" }]
+    },
+    {
+      "id": "activity", "type": "backend", "label": "MainActivity", "sublabel": "Capacitor BridgeActivity",
+      "pos": [355, 180], "size": [170, 64],
+      "explanation": "Actividad nativa del APK (com.bioplant.ai). Extiende BridgeActivity de Capacitor, que abre un WebView y le sirve los archivos de app/ empaquetados en el APK desde https://localhost, sin red.",
+      "sources": [
+        { "path": "android/app/src/main/java/com/bioplant/ai/MainActivity.java", "line": 1, "end_line": 5 },
+        { "path": "capacitor.config.json", "line": 1, "end_line": 5, "label": "webDir: app" }
+      ]
+    },
+    {
+      "id": "permiso", "type": "security", "label": "Permiso CAMERA", "sublabel": "diálogo del sistema",
+      "pos": [880, 180], "size": [140, 64],
+      "explanation": "Cuando la web llama a getUserMedia, el WebChromeClient de Capacitor pide el permiso CAMERA. Debe estar declarado en el manifiesto; si no, Android lo deniega sin mostrar el diálogo. La cámara es opcional (required=false): la galería funciona sin permisos.",
+      "sources": [
+        { "path": "android/app/src/main/AndroidManifest.xml", "line": 40, "end_line": 45 },
+        { "path": "docs/android.md", "line": 47, "end_line": 51, "label": "causa y arreglo" }
+      ]
+    },
+    {
+      "id": "platform", "type": "frontend", "label": "platform.js", "sublabel": "retira el SW",
+      "pos": [30, 340], "size": [120, 64],
+      "explanation": "isNativeApp() lee el window.Capacitor que inyecta el WebView. En el APK, setupServiceWorker() da de baja cualquier service worker anterior y borra las cachés bioplant-*, porque los archivos ya están dentro del APK.",
+      "sources": [
+        { "path": "app/js/platform.js", "line": 1, "end_line": 8 },
+        { "path": "app/js/app.js", "line": 735, "end_line": 756, "label": "setupServiceWorker" }
+      ]
+    },
+    {
+      "id": "ui", "type": "frontend", "label": "app.js · interfaz", "sublabel": "máquina de estados · analyze()",
+      "pos": [260, 340], "size": [480, 64], "tag": "mismo código que la PWA",
+      "sources": [
+        { "path": "app/js/app.js", "line": 215, "end_line": 263, "label": "analyze()" },
+        { "path": "app/js/app.js", "line": 719, "end_line": 729, "label": "init()" }
+      ]
+    },
+    {
+      "id": "camara", "type": "frontend", "label": "camera.js", "sublabel": "getUserMedia / galería",
+      "pos": [880, 340], "size": [140, 64],
+      "sources": [
+        { "path": "app/js/camera.js", "line": 16, "end_line": 46, "label": "visor y captura" },
+        { "path": "app/js/camera.js", "line": 49, "end_line": 64, "label": "mensaje para Android" }
+      ]
+    },
+    {
+      "id": "historial", "type": "database", "label": "IndexedDB", "sublabel": "historial en el teléfono",
+      "pos": [260, 500], "size": [140, 64],
+      "sources": [{ "path": "app/js/history-db.js", "line": 1, "end_line": 36 }]
+    },
+    {
+      "id": "adapter", "type": "backend", "label": "model-adapter.js", "sublabel": "TF.js · WebGL",
+      "pos": [420, 500], "size": [170, 64], "tag": "filtro → 4 clases",
+      "sources": [
+        { "path": "app/js/model-adapter.js", "line": 14, "end_line": 66, "label": "CONFIG + loadModels" },
+        { "path": "app/js/model-adapter.js", "line": 174, "end_line": 204, "label": "isCacao / predict" }
+      ]
+    },
+    {
+      "id": "consultas", "type": "backend", "label": "consultation.js", "sublabel": "guías sin LLM",
+      "pos": [610, 500], "size": [130, 64],
+      "explanation": "Busca en los fragmentos de las guías incluidos en la app. El modelo local solo se usa con ?llm=1 y un servidor de desarrollo; en el APK no hay ese servidor, así que responde con los mejores fragmentos de las guías.",
+      "sources": [
+        { "path": "app/js/consultation.js", "line": 76, "end_line": 117, "label": "loadIndex" },
+        { "path": "app/js/consultation.js", "line": 257, "end_line": 278, "label": "consult" }
+      ]
+    },
+    {
+      "id": "assets", "type": "database", "label": "assets/public del APK", "sublabel": "modelos · tf.min.js · diseases.json · guías",
+      "pos": [420, 660], "size": [320, 64], "tag": "servido en https://localhost",
+      "sources": [
+        { "path": "android/.gitignore", "line": 95, "end_line": 100, "label": "generado por cap sync" },
+        { "path": "docs/android.md", "line": 65, "end_line": 68, "label": "APK sin service worker" },
+        { "path": "app/sw.js", "line": 6, "end_line": 30, "label": "archivos de la app" }
+      ]
+    },
+    {
+      "id": "appsrc", "type": "frontend", "label": "app/ (código web)", "sublabel": "misma base que la PWA",
+      "pos": [240, 840], "size": [140, 64],
+      "sources": [{ "path": "app" }]
+    },
+    {
+      "id": "build", "type": "backend", "label": "cap sync + Gradle", "sublabel": "npm run android:debug",
+      "pos": [500, 840], "size": [170, 64],
+      "sources": [
+        { "path": "package.json", "line": 6, "end_line": 11 },
+        { "path": "docs/android.md", "line": 17, "end_line": 27 }
+      ]
+    },
+    {
+      "id": "python", "type": "backend", "label": "Python · Keras 3", "sublabel": "entrenar → convertir",
+      "pos": [225, 1000], "size": [170, 64],
+      "sources": [
+        { "path": "entrenamiento_filtro_cacao/entrenar.py", "line": 1, "end_line": 10 },
+        { "path": "tools/convert_keras_to_tfjs.py", "line": 153, "end_line": 200, "label": "write_tfjs" }
+      ]
+    }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Teléfono Android · APK com.bioplant.ai · sin red", "wraps": ["activity", "permiso", "platform", "ui", "camara", "historial", "adapter", "consultas", "assets"] },
+    { "kind": "security-group", "label": "WebView · https://localhost", "wraps": ["platform", "ui", "camara", "historial", "adapter", "consultas"] },
+    { "kind": "region", "label": "PC de desarrollo · compilación", "wraps": ["appsrc", "build", "python"] }
+  ],
+  "connections": [
+    { "id": "abrir", "from": "agricultor", "to": "activity", "label": "abre BioPlant AI", "variant": "emphasis" },
+    { "id": "webview", "from": "activity", "to": "ui", "label": "WebView en https://localhost", "variant": "emphasis" },
+    { "id": "visor", "from": "ui", "to": "camara", "label": "visor en vivo" },
+    { "id": "pedir-permiso", "from": "camara", "to": "permiso", "label": "getUserMedia", "variant": "security" },
+    { "id": "nativo", "from": "ui", "to": "platform", "label": "isNativeApp()" },
+    { "id": "guardar", "from": "ui", "to": "historial", "label": "addDiagnosis" },
+    { "id": "inferir", "from": "ui", "to": "adapter", "label": "isCacao → predict", "variant": "emphasis" },
+    { "id": "preguntar", "from": "ui", "to": "consultas", "label": "consult()" },
+    { "id": "leer-modelos", "from": "adapter", "to": "assets", "label": "model.json + shards", "variant": "emphasis" },
+    { "id": "leer-guias", "from": "consultas", "to": "assets", "label": "cacao_chunks.jsonl" },
+    { "id": "empaquetar", "from": "build", "to": "assets", "label": "copia app/ al APK", "variant": "dashed" },
+    { "id": "sync", "from": "appsrc", "to": "build", "label": "cap sync" },
+    { "id": "exportar", "from": "python", "to": "appsrc", "label": "model.json + shards", "variant": "dashed" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Sin internet en el teléfono",
+      "items": [
+        "Todo va dentro del APK: modelos, TF.js, fuentes, textos y guías",
+        "Prueba del 27-11-2026: 22 peticiones, todas a https://localhost, ninguna externa",
+        "Inferencia con WebGL en el teléfono: ~140 ms por foto con los dos modelos"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Diferencias con la PWA",
+      "items": [
+        "El APK no usa service worker: platform.js lo retira y borra las cachés bioplant-*",
+        "La cámara pide el permiso CAMERA de Android; la galería no necesita permisos",
+        "La PWA usa el mismo código de app/ y guarda los archivos con sw.js"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Al cambiar algo en app/",
+      "items": [
+        "Volver a ejecutar cap sync y compilar: assets/public se genera y no está en git",
+        "install -r conserva el historial de IndexedDB del teléfono"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "2938d18e-a115-4b26-a01b-012e25897c9d",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "C:\\Users\\hp\\Downloads\\Sanidad-cultivos-cacao\\.archify\\sequence-diagnostico-20261128-002945\\candidate.json",
+  "output": "C:\\Users\\hp\\Downloads\\Sanidad-cultivos-cacao\\.archify\\sequence-diagnostico-20261128-002945\\bioplant-secuencia.html",
+  "specification": {
+    "sha256": "15a132c8876be0b2bde2f4e2642b3cbb31d9d2c379887ec974b9bbca8970597a",
+    "bytes": 6960
+  },
+  "artifact": {
+    "sha256": "480f2246621a930b1f17e3e9d40f38f2e162f7af936d9fb45beb9951091a1f58",
+    "bytes": 948822
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "d4591dce-b446-4313-9fbc-604a0295799f",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\Users\\hp\\Downloads\\Sanidad-cultivos-cacao\\.archify\\architecture-android-offline-20261128-005249\\candidate.json",
+  "output": "C:\\Users\\hp\\Downloads\\Sanidad-cultivos-cacao\\.archify\\architecture-android-offline-20261128-005249\\bioplant-android.html",
+  "specification": {
+    "sha256": "1b4b8c619b4f1d0b675e7286e6e832de5db348478154f258c0eb503f25abc531",
+    "bytes": 9026
+  },
+  "artifact": {
+    "sha256": "a390cbcaa65d0a07952aff4fdeeec0655b1035a402685231f41862568163d28d",
+    "bytes": 975369
+  }
+}

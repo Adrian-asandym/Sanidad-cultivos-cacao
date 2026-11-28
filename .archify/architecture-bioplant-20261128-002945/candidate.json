@@ -1,0 +1,575 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "BioPlant AI · Arquitectura",
+    "locale": "es",
+    "output": ".archify/architecture-bioplant-20261128-002945/bioplant-arquitectura.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Adrian-asandym/Sanidad-cultivos-cacao.git",
+      "provider": "github",
+      "revision": "55fee6b50206dffac7e101b971073c8b1d78f909"
+    }
+  },
+  "components": [
+    {
+      "id": "agricultor",
+      "type": "external",
+      "label": "Agricultor",
+      "sublabel": "foto de una mazorca",
+      "sources": [
+        {
+          "path": "app/js/app.js",
+          "line": 595,
+          "end_line": 602,
+          "label": "takePhoto()"
+        }
+      ],
+      "pos": [
+        30,
+        340
+      ],
+      "size": [
+        120,
+        64
+      ]
+    },
+    {
+      "id": "camara",
+      "type": "frontend",
+      "label": "camera.js",
+      "sublabel": "getUserMedia / galería",
+      "explanation": "Enciende la cámara trasera con getUserMedia y captura el fotograma como JPEG. Si no hay cámara en vivo, la interfaz usa el selector nativo de fotos. También genera las miniaturas que se guardan en el historial.",
+      "sources": [
+        {
+          "path": "app/js/camera.js",
+          "line": 16,
+          "end_line": 46,
+          "label": "startCamera / captureFrame"
+        },
+        {
+          "path": "app/js/camera.js",
+          "line": 67,
+          "end_line": 81,
+          "label": "makeThumbnail"
+        }
+      ],
+      "pos": [
+        270,
+        340
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "ui",
+      "type": "frontend",
+      "label": "app.js",
+      "sublabel": "máquina de estados de la UI",
+      "tag": "analyze()",
+      "explanation": "Renderiza las pantallas con plantillas en #screen y orquesta el diagnóstico en dos pasos: primero el filtro y, solo si la foto es cacao, el modelo de enfermedad. Guarda el resultado en el historial y muestra el estado 'no concluyente' si la confianza es menor que 0.6.",
+      "sources": [
+        {
+          "path": "app/js/app.js",
+          "line": 215,
+          "end_line": 263,
+          "label": "analyze()"
+        },
+        {
+          "path": "app/js/app.js",
+          "line": 312,
+          "end_line": 330,
+          "label": "renderResult"
+        },
+        {
+          "path": "app/js/app.js",
+          "line": 719,
+          "end_line": 729,
+          "label": "init()"
+        }
+      ],
+      "pos": [
+        500,
+        340
+      ],
+      "size": [
+        300,
+        64
+      ]
+    },
+    {
+      "id": "adapter",
+      "type": "backend",
+      "label": "model-adapter.js",
+      "sublabel": "único módulo con TF.js",
+      "tag": "isCacao · predict",
+      "explanation": "Carga ambos modelos una sola vez, prepara la imagen igual que en el entrenamiento (EXIF, fondo blanco, redimensionado bilinear estilo PIL a 224×224, píxeles 0..255) y traduce las clases del modelo a las etiquetas de la interfaz.",
+      "sources": [
+        {
+          "path": "app/js/model-adapter.js",
+          "line": 14,
+          "end_line": 66,
+          "label": "CONFIG + loadModels"
+        },
+        {
+          "path": "app/js/model-adapter.js",
+          "line": 77,
+          "end_line": 103,
+          "label": "toInput"
+        },
+        {
+          "path": "app/js/model-adapter.js",
+          "line": 174,
+          "end_line": 204,
+          "label": "isCacao / predict"
+        }
+      ],
+      "pos": [
+        940,
+        340
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "modelos",
+      "type": "database",
+      "label": "app/models/",
+      "sublabel": "filtro-cacao · estado-cacao",
+      "tag": "model.json + shards",
+      "sources": [
+        {
+          "path": "app/js/model-adapter.js",
+          "line": 36,
+          "end_line": 50,
+          "label": "loadOne"
+        },
+        {
+          "path": "app/sw.js",
+          "line": 30,
+          "end_line": 43,
+          "label": "MODEL_DIRS"
+        }
+      ],
+      "pos": [
+        940,
+        500
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "historial",
+      "type": "database",
+      "label": "IndexedDB",
+      "sublabel": "store diagnosticos",
+      "tag": "solo miniaturas",
+      "sources": [
+        {
+          "path": "app/js/history-db.js",
+          "line": 1,
+          "end_line": 36,
+          "label": "openDb / addDiagnosis"
+        }
+      ],
+      "pos": [
+        500,
+        500
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "enfermedades",
+      "type": "database",
+      "label": "diseases.json",
+      "sublabel": "textos y manejo",
+      "sources": [
+        {
+          "path": "app/js/app.js",
+          "line": 719,
+          "end_line": 725,
+          "label": "fetch diseases.json"
+        }
+      ],
+      "pos": [
+        660,
+        500
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "consultas",
+      "type": "backend",
+      "label": "consultation.js",
+      "sublabel": "búsqueda en las guías",
+      "explanation": "Recupera fragmentos de las guías (ICA y Guía de manejo integrado) por términos y enfermedad, sin productos químicos ni dosis. Solo en localhost con ?llm=1 pide a un modelo local que elija citas literales, y las comprueba contra el texto original.",
+      "sources": [
+        {
+          "path": "app/js/consultation.js",
+          "line": 76,
+          "end_line": 117,
+          "label": "loadIndex"
+        },
+        {
+          "path": "app/js/consultation.js",
+          "line": 136,
+          "end_line": 205,
+          "label": "retrieve"
+        },
+        {
+          "path": "app/js/consultation.js",
+          "line": 257,
+          "end_line": 278,
+          "label": "consult"
+        }
+      ],
+      "pos": [
+        535,
+        180
+      ],
+      "size": [
+        130,
+        64
+      ]
+    },
+    {
+      "id": "corpus",
+      "type": "database",
+      "label": "cacao_chunks.jsonl",
+      "sublabel": "fragmentos de las guías",
+      "sources": [
+        {
+          "path": "app/js/consultation.js",
+          "line": 76,
+          "end_line": 88,
+          "label": "fetch corpus"
+        }
+      ],
+      "pos": [
+        290,
+        180
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "proxy",
+      "type": "backend",
+      "label": "servir_consultas.py",
+      "sublabel": "solo desarrollo local",
+      "sources": [
+        {
+          "path": "tools/servir_consultas.py",
+          "line": 26,
+          "end_line": 66,
+          "label": "do_POST"
+        },
+        {
+          "path": "tools/servir_consultas.py",
+          "line": 68,
+          "end_line": 77,
+          "label": "main"
+        }
+      ],
+      "pos": [
+        525,
+        40
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "ollama",
+      "type": "external",
+      "label": "Ollama local",
+      "sublabel": "127.0.0.1:11434",
+      "sources": [
+        {
+          "path": "tools/servir_consultas.py",
+          "line": 10,
+          "end_line": 10,
+          "label": "OLLAMA_CHAT"
+        }
+      ],
+      "pos": [
+        270,
+        40
+      ],
+      "size": [
+        130,
+        64
+      ]
+    },
+    {
+      "id": "sw",
+      "type": "cloud",
+      "label": "Service worker",
+      "sublabel": "caché primero",
+      "tag": "bioplant-VERSION",
+      "sources": [
+        {
+          "path": "app/sw.js",
+          "line": 45,
+          "end_line": 79,
+          "label": "install / fetch"
+        },
+        {
+          "path": "app/js/app.js",
+          "line": 735,
+          "end_line": 756,
+          "label": "setupServiceWorker"
+        }
+      ],
+      "pos": [
+        675,
+        180
+      ],
+      "size": [
+        125,
+        64
+      ]
+    },
+    {
+      "id": "hosting",
+      "type": "cloud",
+      "label": "Render (estático)",
+      "sublabel": "publica app/",
+      "sources": [
+        {
+          "path": "render.yaml",
+          "line": 1,
+          "end_line": 25,
+          "label": "render.yaml"
+        }
+      ],
+      "pos": [
+        960,
+        40
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "entrenar",
+      "type": "backend",
+      "label": "entrenar.py",
+      "sublabel": "MobileNetV2 · Keras 3",
+      "sources": [
+        {
+          "path": "entrenamiento_filtro_cacao/entrenar.py",
+          "line": 1,
+          "end_line": 10,
+          "label": "docstring"
+        }
+      ],
+      "pos": [
+        670,
+        660
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "convertidor",
+      "type": "backend",
+      "label": "convert_keras_to_tfjs.py",
+      "sublabel": "aplana y exporta",
+      "sources": [
+        {
+          "path": "tools/convert_keras_to_tfjs.py",
+          "line": 91,
+          "end_line": 103,
+          "label": "build_flat_model"
+        },
+        {
+          "path": "tools/convert_keras_to_tfjs.py",
+          "line": 153,
+          "end_line": 200,
+          "label": "write_tfjs"
+        }
+      ],
+      "pos": [
+        935,
+        660
+      ],
+      "size": [
+        180,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Navegador / WebView · sin backend",
+      "wraps": [
+        "camara",
+        "ui",
+        "adapter",
+        "modelos",
+        "historial",
+        "enfermedades",
+        "consultas",
+        "corpus",
+        "sw"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Desarrollo local (opcional)",
+      "wraps": [
+        "proxy",
+        "ollama"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Entrenamiento y conversión (Python)",
+      "wraps": [
+        "entrenar",
+        "convertidor"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "foto",
+      "from": "agricultor",
+      "to": "camara",
+      "label": "foto / galería",
+      "variant": "emphasis"
+    },
+    {
+      "id": "blob",
+      "from": "camara",
+      "to": "ui",
+      "label": "Blob JPEG",
+      "variant": "emphasis"
+    },
+    {
+      "id": "inferencia",
+      "from": "ui",
+      "to": "adapter",
+      "label": "isCacao → predict",
+      "variant": "emphasis"
+    },
+    {
+      "id": "carga-modelos",
+      "from": "adapter",
+      "to": "modelos",
+      "label": "loadLayersModel"
+    },
+    {
+      "id": "guardar",
+      "from": "ui",
+      "to": "historial",
+      "label": "addDiagnosis"
+    },
+    {
+      "id": "textos",
+      "from": "ui",
+      "to": "enfermedades",
+      "label": "fetch al iniciar"
+    },
+    {
+      "id": "preguntar",
+      "from": "ui",
+      "to": "consultas",
+      "label": "consult(pregunta)"
+    },
+    {
+      "id": "leer-corpus",
+      "from": "consultas",
+      "to": "corpus",
+      "label": "fetch JSONL"
+    },
+    {
+      "id": "llm-local",
+      "from": "consultas",
+      "to": "proxy",
+      "label": "POST /api/consultas · ?llm=1",
+      "variant": "dashed"
+    },
+    {
+      "id": "chat",
+      "from": "proxy",
+      "to": "ollama",
+      "label": "POST /api/chat",
+      "variant": "dashed"
+    },
+    {
+      "id": "registrar-sw",
+      "from": "ui",
+      "to": "sw",
+      "label": "register (no en APK)",
+      "variant": "dashed"
+    },
+    {
+      "id": "precache",
+      "from": "sw",
+      "to": "hosting",
+      "label": "precache app + modelos"
+    },
+    {
+      "id": "keras",
+      "from": "entrenar",
+      "to": "convertidor",
+      "label": ".keras + config"
+    },
+    {
+      "id": "exportar",
+      "from": "convertidor",
+      "to": "modelos",
+      "label": "model.json + shards"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Inferencia en el dispositivo",
+      "items": [
+        "Paso 1: filtro — si P(cacao) < 0.5 se rechaza la foto, sin opción de forzarla",
+        "Paso 2: 4 clases — sano, moniliasis, fitoftora, escoba de bruja",
+        "La normalización a [-1, 1] va dentro del modelo; la app envía 0..255"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Plataformas",
+      "items": [
+        "PWA en Render/Netlify: el service worker guarda la app y los modelos",
+        "APK Android (Capacitor) empaqueta app/ sin cambios y retira el service worker",
+        "TF.js 4.22 y la fuente Outfit van alojados en la app; sin CDN"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Opcional",
+      "items": [
+        "El modelo local (Ollama) solo se usa en localhost con ?llm=1",
+        "Sin él, las consultas devuelven los mejores fragmentos de las guías"
+      ]
+    }
+  ]
+}

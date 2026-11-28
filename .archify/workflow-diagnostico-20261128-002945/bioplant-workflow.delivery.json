@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "b35e0d55-3394-4700-b4d3-78edd7f179c7",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "C:\\Users\\hp\\Downloads\\Sanidad-cultivos-cacao\\.archify\\workflow-diagnostico-20261128-002945\\candidate.json",
+  "output": "C:\\Users\\hp\\Downloads\\Sanidad-cultivos-cacao\\.archify\\workflow-diagnostico-20261128-002945\\bioplant-workflow.html",
+  "specification": {
+    "sha256": "25ac40b9bb7d90dd34913b3dc6046c535ece2169694d8c2d05f4c48a2e288fb4",
+    "bytes": 5376
+  },
+  "artifact": {
+    "sha256": "f3960ef6a178a0ae2964bf4f6324b854041439c4d1d79e29835bf32cc1b72140",
+    "bytes": 950041
+  }
+}

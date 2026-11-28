@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "854b0a1a-37e4-4c6c-a8af-7e7472dbe3a0",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\Users\\hp\\Downloads\\Sanidad-cultivos-cacao\\.archify\\architecture-bioplant-20261128-002945\\candidate.json",
+  "output": "C:\\Users\\hp\\Downloads\\Sanidad-cultivos-cacao\\.archify\\architecture-bioplant-20261128-002945\\bioplant-arquitectura.html",
+  "specification": {
+    "sha256": "d6a3be1a064d6c623ccec435dd9a1cfb753bc9c86b78b546816869a2a15b2dda",
+    "bytes": 12779
+  },
+  "artifact": {
+    "sha256": "334555d34e9980f47140b144fec9c9255c9b0aae9922e83312e2f632d801b7ac",
+    "bytes": 978139
+  }
+}

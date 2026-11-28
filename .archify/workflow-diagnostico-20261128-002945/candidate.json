@@ -1,0 +1,121 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "BioPlant AI · Flujo de diagnóstico",
+    "locale": "es",
+    "output": ".archify/workflow-diagnostico-20261128-002945/bioplant-workflow.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Adrian-asandym/Sanidad-cultivos-cacao.git",
+      "provider": "github",
+      "revision": "55fee6b50206dffac7e101b971073c8b1d78f909"
+    },
+    "legend": {
+      "entries": {
+        "external": { "label": "Agricultor" },
+        "frontend": { "label": "Interfaz (app.js)" },
+        "backend": { "label": "Modelos de IA (TF.js)" },
+        "database": { "label": "Historial en el dispositivo" },
+        "security": { "label": "Rechazo o error" }
+      }
+    }
+  },
+  "lanes": [
+    { "id": "interfaz", "label": "Interfaz" },
+    { "id": "ia", "label": "Inferencia (model-adapter)" },
+    { "id": "datos", "label": "Historial (IndexedDB)" },
+    { "id": "excepcion", "label": "Rechazo y errores", "variant": "exception" }
+  ],
+  "phases": [
+    { "id": "captura", "label": "Captura", "fromCol": 0, "toCol": 1 },
+    { "id": "inferencia", "label": "Dos pasos de IA", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "cierre", "label": "Guardar y mostrar", "fromCol": 4, "toCol": 5 }
+  ],
+  "mainPath": ["foto", "analizar", "filtro", "enfermedad", "guardar", "resultado"],
+  "nodes": [
+    {
+      "id": "foto", "lane": "interfaz", "col": 0, "type": "external",
+      "label": "Tomar o elegir foto", "sublabel": "cámara o galería",
+      "sources": [
+        { "path": "app/js/app.js", "line": 595, "end_line": 602 },
+        { "path": "app/js/app.js", "line": 666, "end_line": 675 }
+      ]
+    },
+    {
+      "id": "analizar", "lane": "interfaz", "col": 1, "type": "frontend",
+      "label": "Analizar", "sublabel": "analyze()",
+      "sources": [{ "path": "app/js/app.js", "line": 215, "end_line": 224 }]
+    },
+    {
+      "id": "filtro", "lane": "ia", "col": 2, "type": "backend",
+      "label": "¿Es cacao?", "sublabel": "isCacao() · filtro", "tag": "P(cacao) ≥ 0.5",
+      "sources": [{ "path": "app/js/model-adapter.js", "line": 188, "end_line": 194 }]
+    },
+    {
+      "id": "enfermedad", "lane": "ia", "col": 3, "type": "backend",
+      "label": "Estado de la mazorca", "sublabel": "predict() · 4 clases",
+      "sources": [
+        { "path": "app/js/model-adapter.js", "line": 196, "end_line": 204 },
+        { "path": "app/js/app.js", "line": 230, "end_line": 238 }
+      ]
+    },
+    {
+      "id": "nocacao", "lane": "excepcion", "col": 3, "type": "security",
+      "label": "Registro no_cacao", "sublabel": "sin diagnóstico",
+      "sources": [{ "path": "app/js/app.js", "line": 225, "end_line": 229 }]
+    },
+    {
+      "id": "error", "lane": "excepcion", "col": 1, "type": "security",
+      "label": "Error de análisis", "sublabel": "Reintentar · recarga modelos",
+      "sources": [{ "path": "app/js/app.js", "line": 257, "end_line": 281 }]
+    },
+    {
+      "id": "guardar", "lane": "datos", "col": 4, "type": "database",
+      "label": "Guardar en historial", "sublabel": "miniatura + vista previa",
+      "sources": [
+        { "path": "app/js/app.js", "line": 239, "end_line": 251 },
+        { "path": "app/js/history-db.js", "line": 34, "end_line": 36 }
+      ]
+    },
+    {
+      "id": "resultado", "lane": "interfaz", "col": 5, "type": "frontend",
+      "label": "Resultado", "sublabel": "enfermedad + manejo cultural", "tag": "< 0.6 → no concluyente",
+      "sources": [{ "path": "app/js/app.js", "line": 312, "end_line": 330 }]
+    },
+    {
+      "id": "rechazo", "lane": "excepcion", "col": 5, "type": "security",
+      "label": "No es un cacao", "sublabel": "sin opción de forzar",
+      "sources": [{ "path": "app/js/app.js", "line": 284, "end_line": 309 }]
+    }
+  ],
+  "edges": [
+    { "id": "e-foto", "from": "foto", "to": "analizar", "variant": "default" },
+    { "id": "e-filtro", "from": "analizar", "to": "filtro", "label": "foto", "variant": "emphasis" },
+    { "id": "e-escacao", "from": "filtro", "to": "enfermedad", "label": "sí, ≥ 0.5", "variant": "emphasis" },
+    { "id": "e-nocacao", "from": "filtro", "to": "nocacao", "label": "no, < 0.5", "variant": "security", "role": "error" },
+    { "id": "e-error", "from": "analizar", "to": "error", "label": "modelo falla", "variant": "security", "role": "error" },
+    { "id": "e-guardar", "from": "enfermedad", "to": "guardar", "label": "label + confianza", "variant": "emphasis" },
+    { "id": "e-guardar-no", "from": "nocacao", "to": "guardar", "variant": "dashed", "role": "branch" },
+    { "id": "e-resultado", "from": "guardar", "to": "resultado", "variant": "emphasis" },
+    { "id": "e-rechazo", "from": "guardar", "to": "rechazo", "label": "si no_cacao", "variant": "security", "role": "branch" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Preprocesado igual al entrenamiento",
+      "items": [
+        "Orientación EXIF, fondo blanco y redimensionado bilinear estilo PIL a 224×224",
+        "Píxeles 0..255; la normalización está dentro del modelo"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Historial",
+      "items": [
+        "Se guardan también las fotos rechazadas (no_cacao)",
+        "Si falla el guardado, se avisa con un toast y el resultado se muestra igual"
+      ]
+    }
+  ]
+}

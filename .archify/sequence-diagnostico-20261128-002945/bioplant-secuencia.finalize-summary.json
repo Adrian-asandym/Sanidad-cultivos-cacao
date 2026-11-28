@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "sequence",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\hp\\Downloads\\Sanidad-cultivos-cacao\\.archify\\sequence-diagnostico-20261128-002945\\candidate.json",
+    "sha256": "15a132c8876be0b2bde2f4e2642b3cbb31d9d2c379887ec974b9bbca8970597a",
+    "bytes": 6960
+  },
+  "artifact": {
+    "path": "C:\\Users\\hp\\Downloads\\Sanidad-cultivos-cacao\\.archify\\sequence-diagnostico-20261128-002945\\bioplant-secuencia.html",
+    "sha256": "480f2246621a930b1f17e3e9d40f38f2e162f7af936d9fb45beb9951091a1f58",
+    "bytes": 948822
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\hp\\Downloads\\Sanidad-cultivos-cacao\\.archify\\sequence-diagnostico-20261128-002945\\bioplant-secuencia.finalize.json",
+    "summaryReceipt": "C:\\Users\\hp\\Downloads\\Sanidad-cultivos-cacao\\.archify\\sequence-diagnostico-20261128-002945\\bioplant-secuencia.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\hp\\Downloads\\Sanidad-cultivos-cacao\\.archify\\sequence-diagnostico-20261128-002945\\bioplant-secuencia.browser-check.json"
+  },
+  "repositoryReferences": {
+    "status": "verified",
+    "revision": "55fee6b50206dffac7e101b971073c8b1d78f909",
+    "count": 8
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.3.2",
+    "availableVersion": "3.3.2",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-28T05:31:04.216Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 10711,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

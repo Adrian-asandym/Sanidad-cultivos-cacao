@@ -1,0 +1,337 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "BioPlant AI · Secuencia de un diagnóstico",
+    "locale": "es",
+    "output": ".archify/sequence-diagnostico-20261128-002945/bioplant-secuencia.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Adrian-asandym/Sanidad-cultivos-cacao.git",
+      "provider": "github",
+      "revision": "55fee6b50206dffac7e101b971073c8b1d78f909"
+    }
+  },
+  "participants": [
+    {
+      "id": "agricultor",
+      "type": "external",
+      "label": "Agricultor",
+      "sublabel": "toca la pantalla",
+      "sources": [
+        {
+          "path": "app/js/app.js",
+          "line": 610,
+          "end_line": 612
+        }
+      ]
+    },
+    {
+      "id": "ui",
+      "type": "frontend",
+      "label": "app.js",
+      "sublabel": "analyze()",
+      "sources": [
+        {
+          "path": "app/js/app.js",
+          "line": 215,
+          "end_line": 263
+        }
+      ]
+    },
+    {
+      "id": "camara",
+      "type": "frontend",
+      "label": "camera.js",
+      "sublabel": "captura y miniaturas",
+      "sources": [
+        {
+          "path": "app/js/camera.js",
+          "line": 38,
+          "end_line": 46
+        },
+        {
+          "path": "app/js/camera.js",
+          "line": 67,
+          "end_line": 81
+        }
+      ]
+    },
+    {
+      "id": "adapter",
+      "type": "backend",
+      "label": "model-adapter.js",
+      "sublabel": "isCacao / predict",
+      "sources": [
+        {
+          "path": "app/js/model-adapter.js",
+          "line": 77,
+          "end_line": 103
+        },
+        {
+          "path": "app/js/model-adapter.js",
+          "line": 174,
+          "end_line": 204
+        }
+      ]
+    },
+    {
+      "id": "tf",
+      "type": "backend",
+      "label": "TF.js",
+      "sublabel": "filtro + estado",
+      "sources": [
+        {
+          "path": "app/js/model-adapter.js",
+          "line": 36,
+          "end_line": 66
+        }
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "IndexedDB",
+      "sublabel": "diagnosticos",
+      "sources": [
+        {
+          "path": "app/js/history-db.js",
+          "line": 1,
+          "end_line": 36
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 155,
+      "to": 260,
+      "label": "Captura"
+    },
+    {
+      "from": 270,
+      "to": 416,
+      "label": "Paso 1 · filtro"
+    },
+    {
+      "from": 428,
+      "to": 586,
+      "label": "Paso 2 · solo si P(cacao) ≥ 0.5"
+    },
+    {
+      "from": 596,
+      "to": 793,
+      "label": "Guardar y mostrar"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m-tomar",
+      "from": "agricultor",
+      "to": "ui",
+      "y": 165,
+      "label": "tomar foto",
+      "variant": "default"
+    },
+    {
+      "id": "m-captura",
+      "from": "ui",
+      "to": "camara",
+      "y": 193,
+      "label": "captureFrame(video)",
+      "variant": "default"
+    },
+    {
+      "id": "m-blob",
+      "from": "camara",
+      "to": "ui",
+      "y": 221,
+      "label": "Blob JPEG",
+      "variant": "return"
+    },
+    {
+      "id": "m-analizar",
+      "from": "agricultor",
+      "to": "ui",
+      "y": 249,
+      "label": "Analizar",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-iscacao",
+      "from": "ui",
+      "to": "adapter",
+      "y": 280,
+      "label": "isCacao(foto)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-filtro",
+      "from": "adapter",
+      "to": "tf",
+      "y": 308,
+      "label": "predict · filtro",
+      "variant": "emphasis",
+      "note": "toInput: EXIF, fondo blanco, bilinear PIL 224×224, 0..255"
+    },
+    {
+      "id": "m-pcacao",
+      "from": "tf",
+      "to": "adapter",
+      "y": 378,
+      "label": "probabilidades",
+      "variant": "return"
+    },
+    {
+      "id": "m-gate",
+      "from": "adapter",
+      "to": "ui",
+      "y": 406,
+      "label": "{isCacao, confidence}",
+      "variant": "return"
+    },
+    {
+      "id": "m-predict",
+      "from": "ui",
+      "to": "adapter",
+      "y": 438,
+      "label": "predict(foto)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-estado",
+      "from": "adapter",
+      "to": "tf",
+      "y": 466,
+      "label": "predict · estado",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m-probs",
+      "from": "tf",
+      "to": "adapter",
+      "y": 494,
+      "label": "4 probabilidades",
+      "variant": "return"
+    },
+    {
+      "id": "m-label",
+      "from": "adapter",
+      "to": "ui",
+      "y": 522,
+      "label": "{label, confidence}",
+      "variant": "return",
+      "note": "argmax; monilia → moniliasis, cacao_sano → sano"
+    },
+    {
+      "id": "m-thumb",
+      "from": "ui",
+      "to": "camara",
+      "y": 606,
+      "label": "makeThumbnail(240 y 1280)",
+      "variant": "default"
+    },
+    {
+      "id": "m-thumbs",
+      "from": "camara",
+      "to": "ui",
+      "y": 634,
+      "label": "miniaturas JPEG",
+      "variant": "return"
+    },
+    {
+      "id": "m-guardar",
+      "from": "ui",
+      "to": "db",
+      "y": 662,
+      "label": "addDiagnosis(registro)",
+      "variant": "dashed",
+      "note": "solo miniaturas, nunca la foto completa"
+    },
+    {
+      "id": "m-id",
+      "from": "db",
+      "to": "ui",
+      "y": 712,
+      "label": "id",
+      "variant": "return"
+    },
+    {
+      "id": "m-resultado",
+      "from": "ui",
+      "to": "agricultor",
+      "y": 740,
+      "label": "resultado o «No es un cacao»",
+      "variant": "return",
+      "note": "confianza < 0.6 → «no concluyente»"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "ui",
+      "from": 165,
+      "to": 746,
+      "type": "frontend"
+    },
+    {
+      "participant": "camara",
+      "from": 193,
+      "to": 221,
+      "type": "frontend"
+    },
+    {
+      "participant": "adapter",
+      "from": 280,
+      "to": 406,
+      "type": "backend"
+    },
+    {
+      "participant": "tf",
+      "from": 308,
+      "to": 378,
+      "type": "backend"
+    },
+    {
+      "participant": "adapter",
+      "from": 438,
+      "to": 522,
+      "type": "backend"
+    },
+    {
+      "participant": "tf",
+      "from": 466,
+      "to": 494,
+      "type": "backend"
+    },
+    {
+      "participant": "camara",
+      "from": 606,
+      "to": 634,
+      "type": "frontend"
+    },
+    {
+      "participant": "db",
+      "from": 662,
+      "to": 712,
+      "type": "database"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Todo en el dispositivo",
+      "items": [
+        "Los dos modelos se cargan una vez al iniciar y funcionan sin internet",
+        "Si P(cacao) < 0.5 se omite el paso 2 y se guarda un registro no_cacao"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Errores",
+      "items": [
+        "Si un modelo falla, se muestra «No se pudo completar el análisis» con Reintentar",
+        "Si falla el guardado, el resultado se muestra igual con un aviso"
+      ]
+    }
+  ]
+}
