@@ -2,7 +2,7 @@
 Entrena el FILTRO de BioPlant AI: ¿la imagen es una mazorca/planta de cacao o no?
 
 Entrada : dataset/cacao/**  y  dataset/otros/**   (jpg / jpeg / png / webp)
-Salida  : modelo3/modelo_cacao.keras  +  modelo3/config_cacao.json
+Salida  : modelo_cacao/modelo_cacao.keras  +  modelo_cacao/config_cacao.json
           entrenamiento_filtro_cacao/resultados/  (métricas, curvas, errores)
 
 Modelo: MobileNetV2 (ImageNet) + GlobalAveragePooling + Dropout + Dense(2, softmax).
@@ -206,7 +206,7 @@ def graficar(hist, destino):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dataset", default=str(ROOT / "dataset"))
-    ap.add_argument("--salida", default=str(ROOT / "modelo3"))
+    ap.add_argument("--salida", default=str(ROOT / "modelo_cacao"))
     ap.add_argument("--epocas-cabeza", type=int, default=15)
     ap.add_argument("--epocas-ajuste", type=int, default=20)
     ap.add_argument("--capas-ajuste", type=int, default=60, help="capas finales de MobileNetV2 que se reentrenan")

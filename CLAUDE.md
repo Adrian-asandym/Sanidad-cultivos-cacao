@@ -12,20 +12,24 @@ BioPlant AI: an offline-first PWA (Spanish UI) that diagnoses cacao pods from a 
 # Run the app (no build step; vanilla HTML/CSS/JS). Camera + service worker need https or localhost.
 python -m http.server 8080 -d app
 
-# Train the "is it cacao?" filter from dataset/cacao + dataset/otros -> modelo3/ (~10 min CPU)
+# Train the "is it cacao?" filter from dataset/cacao + dataset/otros -> modelo_cacao/ (~10 min CPU)
 python entrenamiento_filtro_cacao/entrenar.py
 
 # Evaluate a filter .keras on any folder with cacao/ and otros/ subfolders
-python entrenamiento_filtro_cacao/evaluar.py modelo3/modelo_cacao.keras FOLDER --detalle [--umbral 0.5]
+python entrenamiento_filtro_cacao/evaluar.py modelo_cacao/modelo_cacao.keras FOLDER --detalle [--umbral 0.5]
 
 # Convert a Keras 3 .keras into an app model folder (also self-verifies flattening)
-python tools/convert_keras_to_tfjs.py modelo3/modelo_cacao.keras app/models/filtro-cacao --config modelo3/config_cacao.json
+python tools/convert_keras_to_tfjs.py modelo_cacao/modelo_cacao.keras app/models/filtro-cacao --config modelo_cacao/config_cacao.json
 
 # Verify converted models load in TF.js and match Keras outputs
 cd tools && npm install && npm run verify
 
-# Regenerate PWA PNG icons
+# Regenerate PWA + Android icons/splash from app/icons/logo.svg (needs Edge or Chrome via Playwright)
 python tools/make_icons.py
+
+# Android APK (Capacitor 8): copy app/ into android/ and build, then install
+npm run android:debug
+adb install -r android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
 There is no test suite, linter, or bundler. Python env: TensorFlow 2.21 / Keras 3 (`tensorflowjs` pip package is installed but broken and unused).
@@ -33,16 +37,18 @@ There is no test suite, linter, or bundler. Python env: TensorFlow 2.21 / Keras 
 ## Architecture
 
 **Two-stage inference pipeline** (`app/js/app.js` → `analyze()`):
-1. `isCacao()` — filter model `app/models/filtro-cacao/` (from `modelo3/`). If `P(cacao) < CONFIG.filtro.umbral`, the UI shows "No se puede analizar esta imagen… No es un cacao" and stops; there is intentionally no override.
+1. `isCacao()` — filter model `app/models/filtro-cacao/` (from `modelo_cacao/`). If `P(cacao) < CONFIG.filtro.umbral`, the UI shows "No se puede analizar esta imagen… No es un cacao" and stops; there is intentionally no override.
 2. `predict()` — disease model `app/models/estado-cacao/` (from `modelo_cacao_estado/`), labels `sano | moniliasis | fitoftora | escoba_de_bruja`. Confidence `< LOW_CONFIDENCE` (0.6) renders the amber "no concluyente" state.
 
 **`app/js/model-adapter.js` is the only module that touches TF.js.** The UI depends solely on the `isCacao`/`predict` contract. Model class names → UI labels are mapped in its `CONFIG` (e.g. `monilia` → `moniliasis`, `cacao_sano` → `sano`). Swapping a model = replace files in `app/models/<dir>/` + adjust `CONFIG` if classes change; UI code should not change.
 
 **Preprocessing must match training exactly.** Training (`entrenar.py: cargar_imagen`) uses PIL: EXIF transpose, white background for alpha, `resize((224,224), BILINEAR)` with no crop, pixels 0..255 float. The adapter reimplements PIL's antialiased bilinear in JS (`resizeBilinearPIL`) — the browser's canvas resize deviated up to 0.22 in probability. Normalization (`Rescaling` to [-1,1]) lives *inside* the models, so the app always feeds 0..255. If you change preprocessing on one side, change it on the other.
 
-**Model conversion is custom on purpose.** The official TF.js converter can't read Keras 3 configs, and a Keras-3-style `model.json` fails in TF.js (`modelo1/` is exactly that and does not load). `tools/convert_keras_to_tfjs.py` flattens nested submodels (MobileNetV2) into one graph via `Functional._run_through_graph`, drops training-only layers (`Random*` augmentations, `Dropout`), rewrites config to Keras-2/TF.js format (DepthwiseConv2D weight `kernel` → `depthwise_kernel`), asserts flat == original, and stores expected outputs in `metadata.json` that `verify_tfjs.mjs` checks. New augmentation layers must keep the `Random` class-name prefix or the converter won't strip them.
+**Model conversion is custom on purpose.** The official TF.js converter can't read Keras 3 configs, and a Keras-3-style `model.json` fails in TF.js (the old, now-deleted filter export did exactly that). `tools/convert_keras_to_tfjs.py` flattens nested submodels (MobileNetV2) into one graph via `Functional._run_through_graph`, drops training-only layers (`Random*` augmentations, `Dropout`), rewrites config to Keras-2/TF.js format (DepthwiseConv2D weight `kernel` → `depthwise_kernel`), asserts flat == original, and stores expected outputs in `metadata.json` that `verify_tfjs.mjs` checks. New augmentation layers must keep the `Random` class-name prefix or the converter won't strip them.
 
 **Offline/PWA:** `app/sw.js` is cache-first and precaches the app shell plus every shard listed in each `model.json`. **Bump `VERSION` in `app/sw.js` whenever anything under `app/` changes** (code, `diseases.json`, or models), otherwise installed clients keep stale files. Third-party assets (TF.js 4.22.0, Outfit font) are self-hosted — no CDNs.
+
+**Android (Capacitor):** `android/` wraps `app/` unchanged; `assets/public` is generated by `cap sync` (gitignored), so re-sync after any `app/` change. Same code path as the PWA — `app/js/platform.js` `isNativeApp()` (reads the injected `window.Capacitor`, no `@capacitor/core` import) is the only branch: native skips/unregisters the service worker and words the camera-permission message for Android settings. Camera stays on `getUserMedia`; it needs `android.permission.CAMERA` in `AndroidManifest.xml` or Capacitor's WebChromeClient denies silently. Icons/splash are generated, don't hand-edit them. See `docs/android.md`.
 
 **UI** (`app.js`) is a small state machine rendering screens via template strings into `#screen`, with click delegation on `data-action` attributes. History is IndexedDB-only (`history-db.js`), storing a thumbnail Blob, never the full photo. Disease texts/recommendations live in `app/data/diseases.json`, not in components.
 
@@ -54,6 +60,6 @@ Exception to the skill: by user request the app is **responsive** instead of a f
 
 ## Models and data
 
-- `modelo3/` — current filter (trained here). `modelo1/` (.bin) and `modelo2/` (.keras) are the old filter: bit-identical weights, degenerate (predicts "cacao" for everything); kept untouched at the user's request.
+- `modelo_cacao/` — current filter (trained here; formerly `modelo3/`). `modelo_cacao_estado/` — disease model (not trained here). The old degenerate filter (`modelo1/`, `modelo2/`, predicted "cacao" for everything) was deleted at the user's request; don't recreate it.
 - `dataset/` (gitignored, along with `*.jpg` and the training `cache/`) — `cacao/**` and `otros/**`, 600 each. `entrenar.py` splits train/val/test **by photo session** (`grupo()` collapses `IMG_YYYYMMDD` bursts) to avoid near-duplicate leakage; keep that when changing the split.
 - In-dataset test accuracy overstates real performance; judge filter changes on images from other sources (external set gave 87.8% vs 98.9% in-dataset). Known weakness: leaf-litter/branch photos labeled `cacao` make the model accept forest-floor images.

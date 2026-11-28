@@ -5,8 +5,10 @@ import {
 } from './camera.js';
 import { icon } from './icons.js';
 import { consult } from './consultation.js';
+import { isNativeApp } from './platform.js';
 
 const LOW_CONFIDENCE = 0.6;
+const BLANK_POSTER = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const photoDialog = document.querySelector('#photo-dialog');
@@ -123,7 +125,8 @@ function renderCapture({ focus = true } = {}) {
         <span>Toma una foto o elige una de tu galería</span>
       </div>`;
   } else if (m === 'live') {
-    inner = `<video id="video" playsinline muted autoplay aria-label="Vista de la cámara"></video>`;
+    // Póster transparente: sin él, el WebView de Android pinta un icono gris de "play" hasta que llega la imagen.
+    inner = `<video id="video" playsinline muted autoplay poster="${BLANK_POSTER}" aria-label="Vista de la cámara"></video>`;
   } else if (m === 'photo') {
     inner = `<img class="vf-photo" src="${state.photoUrl}" alt="Foto seleccionada de la mazorca">`;
   } else if (m === 'error') {
@@ -722,8 +725,33 @@ async function init() {
   }
   if (state.tab === 'diagnostico' && !screenEl.firstElementChild) renderCapture({ focus: false });
   bootModels();
-  if ('serviceWorker' in navigator) {
+  setupServiceWorker();
+}
+
+// PWA: el service worker guarda la app y los modelos para usarlos sin internet.
+// APK: todos los archivos ya van dentro de la app y Capacitor los sirve sin red,
+// así que el SW solo duplicaría ~20 MB de caché (modelos + TF.js) y, tras actualizar el APK, podría
+// servir archivos viejos. Se da de baja el que hubiera registrado una versión anterior.
+async function setupServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  if (!isNativeApp()) {
     navigator.serviceWorker.register('./sw.js').catch((err) => console.warn('SW no registrado', err));
+    return;
+  }
+  try {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map((r) => r.unregister()));
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((k) => k.startsWith('bioplant-')).map((k) => caches.delete(k)));
+    }
+    // Si esta página la sirvió un SW viejo, los módulos pueden ser de la caché: recarga una vez.
+    if (navigator.serviceWorker.controller && !sessionStorage.getItem('bp-sw-retirado')) {
+      sessionStorage.setItem('bp-sw-retirado', '1');
+      location.reload();
+    }
+  } catch (err) {
+    console.warn('No se pudo retirar el service worker', err);
   }
 }
 

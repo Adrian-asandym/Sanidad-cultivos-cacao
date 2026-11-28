@@ -1,5 +1,10 @@
 // Cámara en vivo (getUserMedia). Si no está disponible, la interfaz usa el
 // selector nativo de fotos, que en móviles también abre la cámara.
+// En el APK de Android se usa el mismo código: el WebView de Capacitor convierte
+// la petición de getUserMedia en el diálogo de permiso CAMERA del sistema
+// (declarado en android/app/src/main/AndroidManifest.xml).
+
+import { isNativeApp } from './platform.js';
 
 let stream = null;
 
@@ -45,7 +50,9 @@ export function cameraErrorMessage(err) {
   switch (err && err.name) {
     case 'NotAllowedError':
     case 'SecurityError':
-      return 'No tenemos permiso para usar la cámara. Actívalo en los ajustes del navegador o elige una foto de la galería.';
+      return isNativeApp()
+        ? 'No tenemos permiso para usar la cámara. Actívalo en Ajustes > Aplicaciones > BioPlant AI > Permisos o elige una foto de la galería.'
+        : 'No tenemos permiso para usar la cámara. Actívalo en los ajustes del navegador o elige una foto de la galería.';
     case 'NotFoundError':
     case 'OverconstrainedError':
       return 'No encontramos una cámara en este dispositivo. Elige una foto de la galería.';

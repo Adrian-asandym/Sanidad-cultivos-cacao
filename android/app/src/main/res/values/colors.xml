@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tokens de BioPlant AI (ver Cacao disease ui-v1/skills/cacao-disease-ui) -->
+    <color name="bioplant_green">#0B6B45</color>
+    <color name="bioplant_mint">#6EF2B0</color>
+    <!-- Fondo de la app (background_color del manifest PWA): la splash funde con la primera pantalla -->
+    <color name="splash_background">#F8F7FC</color>
+</resources>

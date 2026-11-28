@@ -6,7 +6,7 @@ Por qué existe este script:
   - El conversor oficial (tensorflowjs_converter) no entiende el formato de
     configuración de Keras 3, y un model.json con formato Keras 3 falla en
     TF.js con "An InputLayer should be passed either a batchInputShape or an
-    inputShape" (es lo que ocurre con modelo1/).
+    inputShape" (le pasaba al filtro anterior, ya eliminado).
   - Aquí se "aplana" el modelo (los submodelos anidados como MobileNetV2 se
     integran en un solo grafo), se eliminan las capas que solo actúan durante
     el entrenamiento (aumentos aleatorios y Dropout) y se escribe la topología

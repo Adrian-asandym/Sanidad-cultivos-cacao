@@ -35,7 +35,7 @@ Abre `http://127.0.0.1:8000/?llm=1`. El servidor envía la consulta y los fragme
  ┌─────────────────────────┐   no es cacao   ┌──────────────────────────────┐
  │ 1. Filtro               │ ──────────────▶ │ "No se puede analizar esta   │
  │    models/filtro-cacao  │                 │  imagen: no es un cacao"     │
- │    (desde modelo3/)     │                 └──────────────────────────────┘
+ │    (desde modelo_cacao/)│                 └──────────────────────────────┘
  └───────────┬─────────────┘
              │ es cacao
              ▼
@@ -63,23 +63,27 @@ app/                         ← la PWA (esto es lo que se publica)
     app.js                   ← pantallas y navegación
     model-adapter.js         ← ÚNICO módulo que conoce los modelos
     camera.js                ← cámara en vivo + miniaturas
+    platform.js              ← ¿PWA o APK? (detecta Capacitor)
     history-db.js            ← historial en IndexedDB
     icons.js                 ← iconos SVG locales
   data/diseases.json         ← textos por enfermedad (editar aquí, no en el código)
   models/
-    filtro-cacao/            ← modelo 1: ¿es cacao? (convertido desde modelo3/)
+    filtro-cacao/            ← modelo 1: ¿es cacao? (convertido desde modelo_cacao/)
     estado-cacao/            ← modelo 2: enfermedad (convertido desde modelo_cacao_estado/)
   vendor/tf.min.js           ← TensorFlow.js 4.22.0 (local, sin CDN)
   fonts/                     ← Outfit (local, licencia OFL)
-  icons/                     ← logo e iconos de la PWA
+  icons/                     ← logo.svg (fuente de todos los iconos) e iconos PNG de la PWA
 
-modelo3/                     ← filtro ¿es cacao? reentrenado (.keras) — el que usa la app
-modelo1/                     ← filtro anterior en .bin (sin tocar; ver "modelo1 vs modelo2")
-modelo2/                     ← filtro anterior en .keras (no filtra; ver advertencia)
+android/                     ← proyecto Android de Capacitor (APK); assets/public se copia desde app/
+capacitor.config.json        ← appId com.bioplant.ai, webDir app
+package.json                 ← Capacitor 8 + scripts npm (cap:sync, android:debug, icons…)
+docs/android.md              ← detalles del APK: iconos, splash, cámara, pruebas en dispositivo
+
+modelo_cacao/                ← filtro ¿es cacao? reentrenado (.keras) — el que usa la app
 modelo_cacao_estado/         ← original del modelo de enfermedades en .keras
 
 entrenamiento_filtro_cacao/
-  entrenar.py                ← entrena el filtro con dataset/ y guarda modelo3/
+  entrenar.py                ← entrena el filtro con dataset/ y guarda modelo_cacao/
   evaluar.py                 ← evalúa un filtro con cualquier carpeta cacao/ + otros/
   resultados/                ← métricas, curvas, errores y división train/val/test
 dataset/                     ← imágenes de entrenamiento (no se versiona: .gitignore)
@@ -87,7 +91,7 @@ dataset/                     ← imágenes de entrenamiento (no se versiona: .gi
 tools/
   convert_keras_to_tfjs.py   ← convierte un .keras a formato TF.js y verifica
   verify_tfjs.mjs            ← comprueba que el modelo convertido da lo mismo en TF.js
-  make_icons.py              ← regenera los iconos PNG
+  make_icons.py              ← genera iconos PWA + Android y splash desde app/icons/logo.svg
 Cacao disease ui-v1/         ← skill de diseño de la interfaz
 render.yaml                  ← despliegue en Render (sitio estático de app/)
 netlify.toml                 ← despliegue en Netlify (cabeceras en app/_headers)
@@ -114,18 +118,33 @@ La primera carga descarga unos 21 MB (dos modelos de ~9.5 MB, más TensorFlow.js
 
 El service worker sirve primero lo que tiene en caché. Cada vez que cambies archivos de `app/` (código, textos o modelos), **sube la constante `VERSION` en `app/sw.js`** (por ejemplo `'v2'` → `'v3'`) para que los teléfonos descarguen la versión nueva.
 
+## Aplicación Android (Capacitor)
+
+La misma carpeta `app/` se empaqueta como APK con Capacitor 8. No hay código distinto para Android: el WebView carga `app/` desde dentro del APK (`https://localhost`), así que los modelos y TF.js funcionan sin conexión desde el primer arranque. Detalles y resultados de las pruebas en [`docs/android.md`](docs/android.md).
+
+```bash
+npm install                      # una vez
+npm run android:debug            # cap sync android + gradlew assembleDebug
+npm run android:install          # adb install -r (conserva el historial del teléfono)
+npm run icons                    # tras cambiar app/icons/logo.svg (necesita Edge o Chrome)
+```
+
+- **Cámara:** se usa `getUserMedia` igual que en la PWA. El permiso `CAMERA` está declarado en `android/app/src/main/AndroidManifest.xml`; sin él Android rechaza la petición sin mostrar el diálogo.
+- **Service worker:** solo en la PWA. En el APK no se registra (los archivos ya van dentro) y se retira el que hubiera dejado una versión anterior.
+- Después de cambiar algo en `app/`, vuelve a ejecutar `npm run android:debug` (copia `app/` al proyecto Android) y sube igualmente `VERSION` en `app/sw.js` para la PWA.
+
 ## Los modelos
 
 | Carpeta en `app/models/` | Origen | Clases | Entrada |
 |---|---|---|---|
-| `filtro-cacao/` | `modelo3/modelo_cacao.keras` | `cacao`, `otros` | RGB 224×224, píxeles 0..255 (normalización incluida) |
+| `filtro-cacao/` | `modelo_cacao/modelo_cacao.keras` | `cacao`, `otros` | RGB 224×224, píxeles 0..255 (normalización incluida) |
 | `estado-cacao/` | `modelo_cacao_estado/modelo_cacao.keras` | `cacao_sano`, `escoba_de_bruja`, `fitoftora`, `monilia` | RGB 224×224, píxeles 0..255 (normalización incluida) |
 
 Ambos son MobileNetV2 con una cabeza de clasificación. Pesan ~9.5 MB cada uno en float32 (sin cuantizar).
 
 ### Por qué hubo que convertirlos
 
-El navegador no puede leer archivos `.keras`. El conversor oficial de TensorFlow.js tampoco entiende el formato de Keras 3, y el `model.json` de `modelo1/` está en formato Keras 3, por lo que **TF.js no lo puede cargar**:
+El navegador no puede leer archivos `.keras`. El conversor oficial de TensorFlow.js tampoco entiende el formato de Keras 3, y un `model.json` exportado en formato Keras 3 (como el del filtro anterior) **no lo puede cargar TF.js**:
 
 ```
 An InputLayer should be passed either a `batchInputShape` or an `inputShape`.
@@ -148,34 +167,13 @@ Verificación hecha sobre los modelos incluidos:
 
 La app redimensiona las fotos con el mismo filtro *bilinear* de PIL que se usó al entrenar (implementado en `model-adapter.js`). Con el redimensionado por defecto del navegador, la probabilidad se desviaba en promedio 0.056 (hasta 0.22).
 
-### modelo1 (.bin) vs. modelo2 (.keras)
+### Filtro anterior (eliminado)
 
-Se compararon los pesos de ambos: **son idénticos bit a bit** (262 tensores, 2 260 546 valores, diferencia máxima = 0.0).
+El repositorio tenía un filtro anterior (`modelo1/` en `.bin` y `modelo2/` en `.keras`, con pesos idénticos bit a bit) que se eliminó porque **no filtraba**: respondía "cacao" con más de 99 % de probabilidad para cualquier imagen, incluidos coches, animales, otras frutas e imágenes sintéticas negras, blancas o de ruido. Era un problema del entrenamiento (desequilibrio de clases, etiquetas dudosas, pocas épocas) y, además, no incluía la capa de normalización. Por eso se reentrenó el filtro de `modelo_cacao/`, que lleva `Rescaling` dentro del modelo igual que `modelo_cacao_estado`.
 
-Por eso **no hay diferencia de precisión ni de *loss* entre el `.bin` y el `.keras`**. Un formato de archivo no cambia lo que el modelo aprendió: con los mismos pesos y la misma entrada, las predicciones son las mismas. Una diferencia solo aparecería si una conversión fuera defectuosa o con cuantización, o si se preprocesara la imagen de otra forma. En la práctica:
+## Filtro reentrenado (modelo_cacao/)
 
-- `modelo1/` no carga en TF.js tal como está, así que no sirve como respaldo directo.
-- Si en el futuro quieres usar otro modelo, conviértelo desde el `.keras` con `tools/convert_keras_to_tfjs.py`.
-
-### ⚠️ Advertencia: el filtro anterior (modelo1/ y modelo2/) no filtra
-
-Por eso se reentrenó el filtro en `modelo3/` (ver la sección siguiente). Con las pruebas, **el modelo de `modelo2/` responde "cacao" para cualquier imagen** con más de 99 % de probabilidad:
-
-- 11 fotos que no son cacao (coches, un perro, bananos, mangos, papayas): P(cacao) ≥ 0.997.
-- Imágenes sintéticas negras, blancas, grises, de ruido y azul puro: P(cacao) ≥ 0.998.
-- Ocurre con cualquier escala de entrada (0..255, [-1, 1] y [0, 1]).
-
-Es un problema del **entrenamiento**, no de la app ni de la conversión: el original en Keras da lo mismo, y `modelo1/` tiene los mismos pesos. Causas típicas:
-
-- Muchas más imágenes de `cacao` que de `otros`.
-- Etiquetas mal asignadas.
-- Muy pocas épocas con la base congelada.
-
-Además, el modelo **no incluye capa de normalización**, aunque `config_cacao.json` diga *"normalización incluida en el modelo"*. Al reentrenar, conviene añadir `Rescaling(1/127.5, offset=-1)` dentro del modelo, como en `modelo_cacao_estado`.
-
-## Filtro reentrenado (modelo3/)
-
-`entrenamiento_filtro_cacao/entrenar.py` entrena el filtro con las imágenes de `dataset/` y guarda el resultado en `modelo3/`:
+`entrenamiento_filtro_cacao/entrenar.py` entrena el filtro con las imágenes de `dataset/` y guarda el resultado en `modelo_cacao/`:
 
 ```bash
 python entrenamiento_filtro_cacao/entrenar.py      # ~10 min en CPU
@@ -224,7 +222,7 @@ Fallos que quedan con las imágenes externas:
 4. Volver a entrenar y medir siempre con fotos que no vengan de las mismas sesiones:
 
    ```bash
-   python entrenamiento_filtro_cacao/evaluar.py modelo3/modelo_cacao.keras CARPETA_CON_cacao_Y_otros --detalle
+   python entrenamiento_filtro_cacao/evaluar.py modelo_cacao/modelo_cacao.keras CARPETA_CON_cacao_Y_otros --detalle
    ```
 
 ## Reemplazar un modelo

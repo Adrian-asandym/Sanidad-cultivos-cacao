@@ -5,7 +5,7 @@ Evalúa un modelo filtro (.keras) con una carpeta de imágenes etiquetadas:
     CARPETA/otros/...   imágenes que NO son cacao
 
 Uso:
-    python entrenamiento_filtro_cacao/evaluar.py modelo3/modelo_cacao.keras CARPETA [--umbral 0.5] [--detalle]
+    python entrenamiento_filtro_cacao/evaluar.py modelo_cacao/modelo_cacao.keras CARPETA [--umbral 0.5] [--detalle]
 
 Aplica el mismo preprocesado que la app y que el entrenamiento.
 """

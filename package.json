@@ -1,0 +1,30 @@
+{
+  "name": "sanidad-cultivos-cacao",
+  "version": "1.0.0",
+  "description": "BioPlant AI: diagnóstico de mazorcas de cacao (PWA y APK Android con Capacitor), 100 % sin conexión.",
+  "private": true,
+  "scripts": {
+    "icons": "python tools/make_icons.py",
+    "cap:sync": "cap sync android",
+    "android:debug": "cap sync android && cd android && .\\gradlew.bat assembleDebug",
+    "android:install": "adb install -r android/app/build/outputs/apk/debug/app-debug.apk"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adrian-asandym/Sanidad-cultivos-cacao.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Adrian-asandym/Sanidad-cultivos-cacao/issues"
+  },
+  "homepage": "https://github.com/Adrian-asandym/Sanidad-cultivos-cacao#readme",
+  "dependencies": {
+    "@capacitor/android": "^8.6.3",
+    "@capacitor/core": "^8.6.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.3"
+  }
+}

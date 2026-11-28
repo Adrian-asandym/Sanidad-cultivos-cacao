@@ -1,6 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="BioPlant AI">
-  <rect width="48" height="48" rx="14" fill="#0B6B45"/>
-  <path d="M24 9c6.6 0 10 7 10 15s-3.4 15-10 15-10-7-10-15 3.4-15 10-15z" fill="#6EF2B0"/>
-  <path d="M24 9v30M19.2 11c-1.6 3.6-2.3 8.3-2.3 13s.7 9.4 2.3 13M28.8 11c1.6 3.6 2.3 8.3 2.3 13s-.7 9.4-2.3 13" fill="none" stroke="#0B6B45" stroke-width="1.8" stroke-linecap="round"/>
-  <path d="M24 9c1.5-3 4.4-4.4 7.6-4.2-.5 3.1-3.4 5-7.6 4.2z" fill="#6EF2B0"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 152 165">
+<defs><linearGradient id="leaf" x1="0.72" y1="0" x2="0.22" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#92c91b"/><stop offset=".48" stop-color="#398e39"/><stop offset="1" stop-color="#005447"/></linearGradient><linearGradient id="orbit" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#00796d"/><stop offset="1" stop-color="#91c919"/></linearGradient><mask id="cut" maskUnits="userSpaceOnUse" x="0" y="0" width="152" height="165"><path fill="white" d="M0 0H152V165H0Z"/><g fill="none" stroke="black" stroke-width="5.3" stroke-linecap="round" stroke-linejoin="round"><path d="M56 127V94 M72 150V112L102 85V59 M72 112L78 105V69"/><circle cx="56" cy="87" r="6"/><circle cx="78" cy="62" r="6"/><circle cx="102" cy="52" r="6"/><path d="M5 125C30 146 94 112 132 78" stroke-width="7"/></g></mask></defs>
+<path fill="url(#leaf)" mask="url(#cut)" d="M93 8C77 25 46 47 35 74C19 110 34 135 60 140L64 157L73 148C110 135 128 111 124 76C122 49 109 25 93 8Z"/>
+<path fill="url(#orbit)" d="M27 94C10 108 1 121 8 131C21 151 75 138 117 110C145 91 157 65 125 62C145 70 137 83 120 98C88 126 37 140 19 129C9 123 15 108 27 94Z"/>
 </svg>
